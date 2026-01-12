@@ -49,6 +49,8 @@ async def create_company(
     user_company = UserCompany(user_id=current_user.id, company_id=new_company.id)
     db.add(user_company)
     
+    await db.commit()
+    await db.refresh(new_company)
     
     return new_company
 
