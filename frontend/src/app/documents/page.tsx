@@ -69,7 +69,10 @@ export default function DocumentsPage() {
     // Upload form state
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [documentType, setDocumentType] = useState<string>("past_performance");
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [documentType, setDocumentType] = useState<string>("past_performance");
     const [filterType, setFilterType] = useState<string>("all");
+    const [dragActive, setDragActive] = useState(false);
 
     const fetchDocuments = useCallback(async () => {
         setIsLoading(true);
@@ -95,6 +98,32 @@ export default function DocumentsPage() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setSelectedFile(e.target.files[0]);
+        }
+    };
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            const file = e.dataTransfer.files[0];
+            const validTypes = ['.pdf', '.docx', '.doc', '.txt'];
+            const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+            if (validTypes.includes(fileExtension)) {
+                setSelectedFile(file);
+            } else {
+                alert("Invalid file type. Please upload PDF, DOCX, DOC, or TXT.");
+            }
         }
     };
 
@@ -215,12 +244,38 @@ export default function DocumentsPage() {
                             <div className="grid gap-4 py-4">
                                 <div className="grid gap-2">
                                     <Label htmlFor="file">File</Label>
-                                    <Input
-                                        id="file"
-                                        type="file"
-                                        accept=".pdf,.docx,.doc,.txt"
-                                        onChange={handleFileChange}
-                                    />
+                                    <div
+                                        className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${dragActive ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-blue-400 hover:bg-slate-50"
+                                            }`}
+                                        onDragEnter={handleDrag}
+                                        onDragLeave={handleDrag}
+                                        onDragOver={handleDrag}
+                                        onDrop={handleDrop}
+                                        onClick={() => document.getElementById("file-upload")?.click()}
+                                    >
+                                        <Input
+                                            id="file-upload"
+                                            type="file"
+                                            accept=".pdf,.docx,.doc,.txt"
+                                            onChange={handleFileChange}
+                                            className="hidden"
+                                        />
+                                        <Upload className={`h-8 w-8 mb-2 ${dragActive ? "text-blue-500" : "text-slate-400"}`} />
+                                        {selectedFile ? (
+                                            <div className="text-sm font-medium text-blue-600">
+                                                {selectedFile.name}
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <p className="text-sm font-medium text-slate-700">
+                                                    Drag & drop or click to upload
+                                                </p>
+                                                <p className="text-xs text-slate-500 mt-1">
+                                                    PDF, DOCX, DOC, TXT (Max 50MB)
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="type">Document Type</Label>
