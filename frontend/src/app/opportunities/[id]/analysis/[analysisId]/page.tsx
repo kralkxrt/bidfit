@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ShieldAlert, Target, Award, ListChecks, CheckCircle, AlertCircle, XCircle } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Target, Award, ListChecks, CheckCircle, AlertCircle, XCircle, Trash2 } from "lucide-react";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -243,17 +243,33 @@ export default function AnalysisResultsPage() {
                                 )}
                             </div>
                         </div>
-                        <Button
-                            variant="outline"
-                            className="bg-transparent text-white border-slate-600 hover:bg-slate-800 hover:text-white hover:border-slate-500 transition-colors"
-                            onClick={() => router.push(`/opportunities/${opportunityId}`)}
-                        >
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Back to Opportunity
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="destructive"
+                                size="icon"
+                                className="bg-red-500 hover:bg-red-600 border-red-600 text-white rounded-lg opacity-80 hover:opacity-100 transition-opacity"
+                                onClick={async () => {
+                                    if (confirm("Are you sure you want to delete this analysis permanently?")) {
+                                        await api.delete(`/api/analyses/${analysisId}`);
+                                        router.push(`/opportunities/${opportunityId}`);
+                                    }
+                                }}
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="bg-transparent text-white border-slate-600 hover:bg-slate-800 hover:text-white hover:border-slate-500 transition-colors"
+                                onClick={() => router.push(`/opportunities/${opportunityId}`)}
+                            >
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                Back to Opportunity
+                            </Button>
+                        </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* Header Block */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
@@ -282,9 +298,11 @@ export default function AnalysisResultsPage() {
             </div>
 
             {/* Company Compliance Check (Phase 0) */}
-            {analysis.company_compliance && (
-                <CompanyComplianceCard compliance={analysis.company_compliance} />
-            )}
+            {
+                analysis.company_compliance && (
+                    <CompanyComplianceCard compliance={analysis.company_compliance} />
+                )
+            }
 
             {/* Green Flags - Key Strengths */}
             <GreenFlags strengths={strengths} />
@@ -414,6 +432,6 @@ export default function AnalysisResultsPage() {
                     </div>
                 </TabsContent>
             </Tabs>
-        </div>
+        </div >
     );
 }
