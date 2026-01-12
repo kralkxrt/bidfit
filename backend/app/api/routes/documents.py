@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from pydantic import BaseModel
 from typing import List, Optional
 from uuid import UUID
 
@@ -82,6 +83,29 @@ async def delete_document(
     await db.commit()
     
     return {"message": "Document deleted successfully"}
+
+class BulkDeleteRequest(BaseModel):
+    ids: List[UUID]
+
+@router.post("/bulk-delete")
+async def bulk_delete_documents(
+    payload: BulkDeleteRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Bulk soft delete documents."""
+    from app.models import Document
+    from datetime import datetime
+    from sqlalchemy import update
+    
+    if not payload.ids:
+        return {"message": "No IDs provided"}
+        
+    query = update(Document).where(Document.id.in_(payload.ids)).values(deleted_at=datetime.utcnow())
+    await db.execute(query)
+    await db.commit()
+    
+    return {"message": f"Successfully deleted {len(payload.ids)} documents"}
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def list_documents(

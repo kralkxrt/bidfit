@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { FileText, ArrowRight, Trash2 } from "lucide-react";
+import { FileText, ArrowRight, Trash2, Loader2 } from "lucide-react";
 import { useCompanyStore } from "@/store/useCompanyStore";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,8 @@ export default function AnalysesPage() {
     const [loading, setLoading] = useState(true);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
     useEffect(() => {
         if (selectedCompanyId) {
@@ -128,6 +130,36 @@ export default function AnalysesPage() {
         }
     };
 
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedIds(analyses.map(a => a.id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectOne = (id: string, checked: boolean) => {
+        if (checked) {
+            setSelectedIds(prev => [...prev, id]);
+        } else {
+            setSelectedIds(prev => prev.filter(item => item !== id));
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+        setIsBulkDeleting(true);
+        try {
+            await api.post('/api/analyses/bulk-delete', { ids: selectedIds });
+            fetchAnalyses();
+            setSelectedIds([]);
+        } catch (error) {
+            console.error("Bulk delete failed", error);
+        } finally {
+            setIsBulkDeleting(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div>
@@ -136,6 +168,23 @@ export default function AnalysesPage() {
                     View all gap analyses for your company.
                 </p>
             </div>
+
+            {selectedIds.length > 0 && (
+                <div className="bg-slate-100 border border-slate-200 text-slate-700 px-4 py-2 rounded-lg flex items-center justify-between animate-in fade-in slide-in-from-top-2 mb-4">
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm">{selectedIds.length} selected</span>
+                    </div>
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setIsBulkDeleting(true)}
+                        disabled={isBulkDeleting}
+                    >
+                        {isBulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                        Delete Selected
+                    </Button>
+                </div>
+            )}
 
             <Card>
                 <CardHeader>
@@ -162,6 +211,14 @@ export default function AnalysesPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-[40px]">
+                                        <input
+                                            type="checkbox"
+                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            checked={analyses.length > 0 && selectedIds.length === analyses.length}
+                                            onChange={(e) => handleSelectAll(e.target.checked)}
+                                        />
+                                    </TableHead>
                                     <TableHead>Opportunity</TableHead>
                                     <TableHead>Date</TableHead>
                                     <TableHead>Overall Score</TableHead>
@@ -174,12 +231,22 @@ export default function AnalysesPage() {
                                     <TableRow
                                         key={analysis.id}
                                         className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                        data-state={selectedIds.includes(analysis.id) ? "selected" : undefined}
                                         onClick={() =>
                                             router.push(
                                                 `/opportunities/${analysis.opportunity_id}/analysis/${analysis.id}`
                                             )
                                         }
                                     >
+                                        <TableCell>
+                                            <input
+                                                type="checkbox"
+                                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                checked={selectedIds.includes(analysis.id)}
+                                                onChange={(e) => handleSelectOne(analysis.id, e.target.checked)}
+                                                onClick={(e) => e.stopPropagation()}
+                                            />
+                                        </TableCell>
                                         <TableCell className="font-medium">
                                             <div className="flex items-center space-x-2">
                                                 <FileText className="h-4 w-4 text-muted-foreground" />
@@ -223,6 +290,15 @@ export default function AnalysesPage() {
                     )}
                 </CardContent>
             </Card>
+
+            <DeleteConfirmDialog
+                isOpen={isBulkDeleting}
+                onClose={() => setIsBulkDeleting(false)}
+                onConfirm={handleBulkDelete}
+                title={`Delete ${selectedIds.length} Analyses`}
+                description="Are you sure you want to delete these reports? This action cannot be undone."
+                isDeleting={isBulkDeleting}
+            />
 
             <DeleteConfirmDialog
                 isOpen={!!deleteId}

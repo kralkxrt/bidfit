@@ -71,6 +71,27 @@ def get_analysis_engine():
 
 # --- Routes ---
 
+class BulkDeleteRequest(BaseModel):
+    ids: List[UUID]
+
+@router.post("/bulk-delete")
+async def bulk_delete_analyses(
+    payload: BulkDeleteRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Bulk soft delete analyses."""
+    from sqlalchemy import update
+    
+    if not payload.ids:
+        return {"message": "No IDs provided"}
+        
+    query = update(Analysis).where(Analysis.id.in_(payload.ids)).values(deleted_at=datetime.utcnow())
+    await db.execute(query)
+    await db.commit()
+    
+    return {"message": f"Successfully deleted {len(payload.ids)} analyses"}
+
 @router.post("/", response_model=AnalysisDetailResponse, status_code=status.HTTP_201_CREATED)
 async def run_analysis(
     request: AnalysisCreateRequest,
