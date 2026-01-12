@@ -86,7 +86,13 @@ export default function LoginPage() {
                         </Button>
                     </form>
                 </CardContent>
+
             </Card>
-        </div>
+            <div className="absolute bottom-8 text-center w-full">
+                <a href="/how-it-works" className="text-sm text-slate-500 hover:text-blue-600 font-medium transition-colors">
+                    How it works?
+                </a>
+            </div>
+        </div >
     );
 }

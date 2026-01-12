@@ -1,4 +1,7 @@
+"use client";
+
 import { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
@@ -7,6 +10,17 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+    const pathname = usePathname();
+    const isPublicPage = pathname === '/login' || pathname === '/how-it-works';
+
+    if (isPublicPage) {
+        return (
+            <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+                {children}
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
             <Sidebar />

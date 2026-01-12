@@ -10,7 +10,8 @@ export function middleware(request: NextRequest) {
         "/api/auth",
         "/_next", // Next.js internals
         "/static", // Static assets
-        "/favicon.ico"
+        "/favicon.ico",
+        "/how-it-works"
     ];
 
     // Check if the path starts with any of the public paths
