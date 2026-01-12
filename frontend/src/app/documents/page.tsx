@@ -69,8 +69,7 @@ export default function DocumentsPage() {
     // Upload form state
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [documentType, setDocumentType] = useState<string>("past_performance");
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [documentType, setDocumentType] = useState<string>("past_performance");
+
     const [filterType, setFilterType] = useState<string>("all");
     const [dragActive, setDragActive] = useState(false);
 
