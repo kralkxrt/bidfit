@@ -46,7 +46,7 @@ export function Sidebar() {
                             <span className="text-slate-900">Bid</span>
                             <span className="text-blue-600">Fit</span>
                         </div>
-                        <span className="text-[10px] font-semibold text-slate-400 pr-0.5">from Pera Inc</span>
+                        <span className="text-[8px] font-semibold text-slate-400 pr-0.5">from Pera Inc</span>
                     </div>
                 </Link>
             </div>
