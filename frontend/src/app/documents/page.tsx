@@ -263,109 +263,88 @@ export default function DocumentsPage() {
                         </DialogContent>
                     </Dialog>
                 </div>
+            </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Library</CardTitle>
-                        <CardDescription>
-                            List of documents for {selectedCompanyId === 'all' || !selectedCompanyId ? 'all organizations' : companies.find(c => c.id === selectedCompanyId)?.name}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Library</CardTitle>
+                    <CardDescription>
+                        List of documents for {selectedCompanyId === 'all' || !selectedCompanyId ? 'all organizations' : companies.find(c => c.id === selectedCompanyId)?.name}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[300px]">Filename</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Uploaded</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Metadata</TableHead>
+                                <TableHead className="w-[80px]">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
                                 <TableRow>
-                                    <TableHead className="w-[300px]">Filename</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Uploaded</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Metadata</TableHead>
-                                    <TableHead className="w-[80px]">Actions</TableHead>
+                                    <TableCell colSpan={6} className="h-24 text-center">
+                                        <Loader2 className="mr-2 h-6 w-6 animate-spin inline" />
+                                        Loading...
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">
-                                            <Loader2 className="mr-2 h-6 w-6 animate-spin inline" />
-                                            Loading...
-                                        </TableCell>
-                                    </TableRow>
-                                ) : filteredDocuments.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                                            {filterType === 'all'
-                                                ? "No documents found. Upload one to get started."
-                                                : "No documents found matching the selected type."}
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    filteredDocuments.map((doc) => (
-                                        <TableRow key={doc.id}>
-                                            <TableCell className="font-medium">
-                                                <div className="flex items-center gap-2">
-                                                    <FileText className="h-4 w-4 text-blue-500" />
-                                                    {doc.filename}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className="capitalize">
-                                                    {doc.document_type.replace('_', ' ')}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>{format(new Date(doc.created_at), 'MMM d, yyyy')}</TableCell>
-                                            <TableCell>{getStatusBadge(doc.processing_status)}</TableCell>
-                                            <TableCell>
-                                                {doc.parsed_content?.contract_number ? (
-                                                    <div className="text-xs text-muted-foreground">
-                                                        <div className="font-semibold text-foreground">
-                                                            {doc.parsed_content.contract_number}
-                                                        </div>
-                                                        <div>{doc.parsed_content.customer_agency}</div>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-muted-foreground">-</span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(doc.id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                            <div className="text-xs text-muted-foreground">
-                                <div className="font-semibold text-foreground">
-                                    {doc.parsed_content.contract_number}
-                                </div>
-                                <div>{doc.parsed_content.customer_agency}</div>
-                            </div>
+                            ) : filteredDocuments.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                        {filterType === 'all'
+                                            ? "No documents found. Upload one to get started."
+                                            : "No documents found matching the selected type."}
+                                    </TableCell>
+                                </TableRow>
                             ) : (
-                            <span className="text-xs text-muted-foreground">-</span>
-                                        )}
-                        </TableCell>
-                        <TableCell>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(doc.id)}
-                            >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                        </TableCell>
-                    </TableRow>
-                    ))
+                                filteredDocuments.map((doc) => (
+                                    <TableRow key={doc.id}>
+                                        <TableCell className="font-medium">
+                                            <div className="flex items-center gap-2">
+                                                <FileText className="h-4 w-4 text-blue-500" />
+                                                {doc.filename}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className="capitalize">
+                                                {doc.document_type.replace('_', ' ')}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>{format(new Date(doc.created_at), 'MMM d, yyyy')}</TableCell>
+                                        <TableCell>{getStatusBadge(doc.processing_status)}</TableCell>
+                                        <TableCell>
+                                            {doc.parsed_content?.contract_number ? (
+                                                <div className="text-xs text-muted-foreground">
+                                                    <div className="font-semibold text-foreground">
+                                                        {doc.parsed_content.contract_number}
+                                                    </div>
+                                                    <div>{doc.parsed_content.customer_agency}</div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground">-</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleDelete(doc.id)}
+                                            >
+                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
                             )}
-                </TableBody>
-            </Table>
-        </CardContent>
-                </Card >
-            </div >
-            );
+                        </TableBody>
+
+                    </Table>
+                </CardContent >
+            </Card >
+        </div >
+    );
 }
