@@ -44,8 +44,8 @@ export default function LoginPage() {
             <Card className="w-full max-w-md shadow-lg border-slate-200">
                 <CardHeader className="space-y-1 text-center">
                     <div className="flex justify-center mb-4">
-                        <div className="bg-emerald-100 p-3 rounded-full">
-                            <Lock className="w-6 h-6 text-emerald-600" />
+                        <div className="bg-blue-100 p-3 rounded-full">
+                            <Lock className="w-6 h-6 text-blue-600" />
                         </div>
                     </div>
                     <CardTitle className="text-2xl font-bold text-slate-900">
@@ -79,7 +79,7 @@ export default function LoginPage() {
                         </div>
                         <Button
                             type="submit"
-                            className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                            className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                             disabled={loading}
                         >
                             {loading ? "Verifying..." : "Unlock Dashboard"}
