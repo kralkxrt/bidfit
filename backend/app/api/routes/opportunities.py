@@ -209,8 +209,8 @@ async def get_pipeline_summary(
         'capture': {'total': 0, 'active': 0, 'hidden': 0, 'no_bid': 0, 'favorites': 0},
         'analyzing': {'total': 0, 'active': 0, 'hidden': 0, 'no_bid': 0, 'favorites': 0},
         'writing': {'total': 0, 'active': 0, 'hidden': 0, 'no_bid': 0, 'favorites': 0},
+        'compliance': {'total': 0, 'active': 0, 'hidden': 0, 'no_bid': 0, 'favorites': 0},
         'submitted': {'total': 0, 'active': 0, 'hidden': 0, 'no_bid': 0, 'favorites': 0},
-        'awarded': {'total': 0, 'active': 0, 'hidden': 0, 'no_bid': 0, 'favorites': 0},
         'lost': {'total': 0, 'active': 0, 'hidden': 0, 'no_bid': 0, 'favorites': 0},
     }
     
@@ -244,7 +244,7 @@ async def update_pipeline_stage(
 ):
     """Move opportunity to a different pipeline stage (drag-and-drop)"""
     
-    valid_stages = ['capture', 'analyzing', 'writing', 'submitted', 'awarded', 'lost']
+    valid_stages = ['capture', 'analyzing', 'writing', 'compliance', 'submitted', 'lost']
     stage = body.get('stage')
     
     if stage not in valid_stages:
