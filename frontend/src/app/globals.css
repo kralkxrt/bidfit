@@ -12,6 +12,11 @@
 
 
 @layer base {
+  html {
+    font-size: 14px;
+    /* Global Scale Out (High Density Mode) */
+  }
+
   :root {
     --brand-blue: #3B82F6;
     --background: 210 40% 98%;
