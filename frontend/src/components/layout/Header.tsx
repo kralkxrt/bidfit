@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useCompanyStore } from '@/store/useCompanyStore';
 import {
     Select,
@@ -24,6 +25,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export function Header() {
+    const pathname = usePathname();
+    const isLoginPage = pathname === '/login';
+
     const { companies, selectedCompanyId, selectCompany, fetchCompanies, addCompany, removeCompany, isLoading } = useCompanyStore();
 
     // Dialog States
@@ -36,8 +40,10 @@ export function Header() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        fetchCompanies();
-    }, [fetchCompanies]);
+        if (!isLoginPage) {
+            fetchCompanies();
+        }
+    }, [fetchCompanies, isLoginPage]);
 
     const handleSelectChange = (value: string) => {
         if (value === "add_new") {
@@ -84,35 +90,37 @@ export function Header() {
                     <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Org:</span>
                     <div className="w-[200px]">
                         <Select
-                            value={selectedCompanyId || ''}
+                            value={isLoginPage ? '' : (selectedCompanyId || '')}
                             onValueChange={handleSelectChange}
-                            disabled={isLoading}
+                            disabled={isLoading || isLoginPage}
                         >
                             <SelectTrigger className="h-8 border-none bg-transparent shadow-none p-0 focus:ring-0 text-slate-600 font-semibold hover:text-blue-600">
-                                <SelectValue placeholder="Select Company" />
+                                <SelectValue placeholder={isLoginPage ? "" : "Select Company"} />
                             </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-100 shadow-lg shadow-blue-900/5">
-                                <div className="p-2 text-xs font-semibold text-slate-400">Your Organizations</div>
-                                <SelectItem value="all">All Organizations</SelectItem>
-                                {companies.map((company) => (
-                                    <SelectItem key={company.id} value={company.id}>
-                                        {company.name}
+                            {!isLoginPage && (
+                                <SelectContent className="rounded-xl border-slate-100 shadow-lg shadow-blue-900/5">
+                                    <div className="p-2 text-xs font-semibold text-slate-400">Your Organizations</div>
+                                    <SelectItem value="all">All Organizations</SelectItem>
+                                    {companies.map((company) => (
+                                        <SelectItem key={company.id} value={company.id}>
+                                            {company.name}
+                                        </SelectItem>
+                                    ))}
+                                    <SelectSeparator className="my-2 bg-slate-100" />
+                                    <SelectItem value="add_new" className="text-blue-600 font-medium focus:bg-blue-50 focus:text-blue-700">
+                                        <span className="flex items-center gap-2">
+                                            <PlusCircle className="w-4 h-4" />
+                                            Add New Organization
+                                        </span>
                                     </SelectItem>
-                                ))}
-                                <SelectSeparator className="my-2 bg-slate-100" />
-                                <SelectItem value="add_new" className="text-blue-600 font-medium focus:bg-blue-50 focus:text-blue-700">
-                                    <span className="flex items-center gap-2">
-                                        <PlusCircle className="w-4 h-4" />
-                                        Add New Organization
-                                    </span>
-                                </SelectItem>
-                                <SelectItem value="manage" className="text-slate-500 font-medium focus:bg-slate-50">
-                                    <span className="flex items-center gap-2">
-                                        <Settings className="w-4 h-4" />
-                                        Manage Organizations
-                                    </span>
-                                </SelectItem>
-                            </SelectContent>
+                                    <SelectItem value="manage" className="text-slate-500 font-medium focus:bg-slate-50">
+                                        <span className="flex items-center gap-2">
+                                            <Settings className="w-4 h-4" />
+                                            Manage Organizations
+                                        </span>
+                                    </SelectItem>
+                                </SelectContent>
+                            )}
                         </Select>
                     </div>
                 </div>
