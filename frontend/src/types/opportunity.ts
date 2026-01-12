@@ -1,4 +1,4 @@
-export type PipelineStage = 'capture' | 'analyzing' | 'writing' | 'submitted' | 'awarded' | 'lost';
+export type PipelineStage = 'capture' | 'analyzing' | 'writing' | 'compliance' | 'submitted' | 'lost';
 
 export interface OpportunityAnalysisSummary {
     id: string;

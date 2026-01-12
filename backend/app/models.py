@@ -203,7 +203,7 @@ class Opportunity(Base):
 
     # NEW PIPELINE FIELDS
     pipeline_stage = Column(String(50), default='capture', nullable=False, index=True)
-    # Values: 'capture', 'analyzing', 'writing', 'submitted', 'awarded', 'lost'
+    # Values: 'capture', 'analyzing', 'writing', 'compliance', 'submitted', 'lost'
     
     is_hidden = Column(Boolean, default=False, nullable=False, index=True)
     hidden_at = Column(DateTime(timezone=True), nullable=True)
