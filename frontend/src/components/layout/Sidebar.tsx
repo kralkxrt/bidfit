@@ -9,7 +9,8 @@ import {
     Briefcase,
     Hexagon,
     LogOut,
-    Building2
+    Building2,
+    HelpCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +20,7 @@ const navigation = [
     { name: 'Organizations', href: '/organizations', icon: Building2 },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Analyses', href: '/analyses', icon: BarChart3 },
+    { name: 'How It Works', href: '/how-it-works', icon: HelpCircle },
 ];
 
 export function Sidebar() {
