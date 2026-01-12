@@ -84,15 +84,15 @@ export default function LoginPage() {
                         >
                             {loading ? "Verifying..." : "Unlock Dashboard"}
                         </Button>
+                        <div className="text-center pt-2">
+                            <a href="/how-it-works" className="text-lg text-slate-500 hover:text-blue-600 font-medium transition-colors">
+                                How it works?
+                            </a>
+                        </div>
                     </form>
                 </CardContent>
 
             </Card>
-            <div className="absolute bottom-8 text-center w-full">
-                <a href="/how-it-works" className="text-sm text-slate-500 hover:text-blue-600 font-medium transition-colors">
-                    How it works?
-                </a>
-            </div>
         </div >
     );
 }
