@@ -1,6 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime, timedelta
+from pydantic import BaseModel
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -480,6 +481,28 @@ async def delete_opportunity(
     await db.delete(opp)
     await db.commit()
     return None
+
+class BulkDeleteRequest(BaseModel):
+    ids: List[UUID]
+
+@router.post("/bulk-delete")
+async def bulk_delete_opportunities(
+    payload: BulkDeleteRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Bulk delete opportunities."""
+    from sqlalchemy import delete
+    
+    if not payload.ids:
+        return {"message": "No IDs provided"}
+        
+    # Hard delete matches single delete behavior for opportunities
+    query = delete(Opportunity).where(Opportunity.id.in_(payload.ids))
+    await db.execute(query)
+    await db.commit()
+    
+    return {"message": f"Successfully deleted {len(payload.ids)} opportunities"}
 
 @router.post("/{id}/rescan", response_model=OpportunityResponse)
 async def rescan_requirements(
