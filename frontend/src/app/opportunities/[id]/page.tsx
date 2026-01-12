@@ -496,7 +496,7 @@ export default function OpportunityDetailPage() {
                                                         opportunity.latest_analysis.go_no_go === 'NO_GO' ? 'bg-red-600' : 'bg-amber-600'
                                                 }
                                             >
-                                                {opportunity.latest_analysis.go_no_go.replace('_', ' ')}
+                                                {(opportunity.latest_analysis.go_no_go || 'PENDING').replace('_', ' ')}
                                             </Badge>
                                             <span className="text-2xl font-bold">
                                                 {opportunity.latest_analysis.overall_relevance_score}%

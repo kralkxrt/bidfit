@@ -82,7 +82,8 @@ export default function AnalysisResultsPage() {
         return <div className="p-8 text-center text-gray-500">Analysis not found. Check if the ID is correct.</div>;
     }
 
-    const renderGoNoGoBadge = (status: string = "") => {
+    const renderGoNoGoBadge = (status: string | null | undefined) => {
+        if (!status) return <Badge variant="outline">PENDING</Badge>;
         const s = status.toUpperCase();
 
         if (s.includes("GO") && !s.includes("NO")) {
