@@ -104,7 +104,7 @@ export function PipelineView({
                         placeholder="Search opportunities..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     {searchQuery && (
                         <button
@@ -120,13 +120,13 @@ export function PipelineView({
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${showFilters ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-300 hover:bg-gray-50'
+                        className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${showFilters ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 hover:bg-gray-50'
                             }`}
                     >
                         <Filter className="w-4 h-4" />
                         Filters
                         {Object.keys(filters).length > 0 && (
-                            <span className="bg-emerald-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                            <span className="bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
                                 {Object.keys(filters).length}
                             </span>
                         )}
@@ -145,7 +145,7 @@ export function PipelineView({
                     {/* Add New */}
                     <a
                         href="/opportunities/new"
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         New Opportunity
@@ -186,7 +186,7 @@ export function PipelineView({
                                     <div
                                         ref={provided.innerRef}
                                         {...provided.droppableProps}
-                                        className={`bg-gray-50 border border-gray-200 rounded-b-xl min-h-[400px] p-2 space-y-2 transition-colors ${snapshot.isDraggingOver ? 'bg-emerald-50 border-emerald-300' : ''
+                                        className={`bg-gray-50 border border-gray-200 rounded-b-xl min-h-[400px] p-2 space-y-2 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-50 border-blue-300' : ''
                                             }`}
                                     >
                                         {groupedOpportunities[stage.key]?.map((opportunity, index) => (
