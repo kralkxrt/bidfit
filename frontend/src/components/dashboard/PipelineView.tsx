@@ -15,7 +15,7 @@ const PIPELINE_STAGES: { key: PipelineStage; label: string; icon: string; color:
     { key: 'capture', label: 'Capture', icon: '📥', color: 'border-t-blue-500' },
     { key: 'analyzing', label: 'Analyzing', icon: '🔍', color: 'border-t-purple-500' },
     { key: 'writing', label: 'Writing', icon: '✍️', color: 'border-t-amber-500' },
-    { key: 'compliance', label: 'Compliance', icon: '⚖️', color: 'border-t-indigo-500' },
+    { key: 'compliance', label: 'Compliance', icon: '⚖️', color: 'border-t-red-500' },
     { key: 'submitted', label: 'Submitted', icon: '✅', color: 'border-t-green-600' },
 ];
 
