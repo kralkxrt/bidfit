@@ -186,7 +186,7 @@ export function PipelineView({
                                     <div
                                         ref={provided.innerRef}
                                         {...provided.droppableProps}
-                                        className={`bg-gray-50 border border-gray-200 rounded-b-xl min-h-[400px] max-h-[calc(100vh-300px)] overflow-y-auto p-2 space-y-2 transition-colors scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent ${snapshot.isDraggingOver ? 'bg-blue-50 border-blue-300' : ''
+                                        className={`bg-gray-50 border border-gray-200 rounded-b-xl min-h-[400px] max-h-[1100px] overflow-y-auto p-2 space-y-2 transition-colors scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent ${snapshot.isDraggingOver ? 'bg-blue-50 border-blue-300' : ''
                                             }`}
                                     >
                                         {groupedOpportunities[stage.key]?.map((opportunity, index) => (
