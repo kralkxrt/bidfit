@@ -29,6 +29,7 @@ class OpportunityUpdate(OpportunityBase):
 class OpportunityResponse(OpportunityBase):
     id: UUID
     company_id: UUID
+    company_name: Optional[str] = None
     
     # Pipeline Fields
     pipeline_stage: str
@@ -65,9 +66,82 @@ class OpportunityDocumentResponse(BaseModel):
 class CompanyCreate(BaseModel):
     name: str
 
+class CompanyUpdate(BaseModel):
+    name: Optional[str] = None
+    website: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    address_line1: Optional[str] = None
+    address_line2: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
+    country: Optional[str] = None
+    
+    # Extended Info
+    employee_count: Optional[int] = None
+    founded_year: Optional[int] = None
+    description: Optional[str] = None
+    
+    # GovCon Specifics
+    uei: Optional[str] = None
+    cage_code: Optional[str] = None
+    business_size: Optional[str] = None
+    certifications: Optional[List[str]] = None
+    certification_details: Optional[Dict[str, Any]] = None
+    
+    gsa_schedules: Optional[List[Dict[str, Any]]] = None
+    contract_vehicles: Optional[List[str]] = None
+    
+    naics_codes: Optional[List[str]] = None
+    primary_naic_code: Optional[str] = None
+    service_areas: Optional[List[str]] = None
+    facility_clearance: Optional[str] = None
+    geographic_coverage: Optional[List[str]] = None
+    
+    annual_revenue: Optional[int] = None
+    bonding_capacity: Optional[int] = None
+    
+    teaming_partners: Optional[List[Dict[str, Any]]] = None
+    typical_role: Optional[str] = None
+
 class CompanyResponse(BaseModel):
     id: UUID
     name: str
+    website: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    address_line1: Optional[str] = None
+    address_line2: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
+    country: Optional[str] = None
+    
+    # Extended Info
+    employee_count: Optional[int] = None
+    founded_year: Optional[int] = None
+    description: Optional[str] = None
+    
+    # GovCon Specifics
+    uei: Optional[str] = None
+    cage_code: Optional[str] = None
+    business_size: Optional[str] = None
+    certifications: Optional[List[str]] = None
+    certification_details: Optional[Dict[str, Any]] = None
+    
+    gsa_schedules: Optional[List[Dict[str, Any]]] = None
+    contract_vehicles: Optional[List[str]] = None
+    
+    naics_codes: Optional[List[str]] = None
+    primary_naic_code: Optional[str] = None
+    service_areas: Optional[List[str]] = None
+    facility_clearance: Optional[str] = None
+    geographic_coverage: Optional[List[str]] = None
+    
+    annual_revenue: Optional[int] = None
+    bonding_capacity: Optional[int] = None
+    
+    teaming_partners: Optional[List[Dict[str, Any]]] = None
+    typical_role: Optional[str] = None
     
     class Config:
         from_attributes = True

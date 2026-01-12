@@ -9,8 +9,8 @@ import {
     SelectValue,
     SelectSeparator,
 } from '@/components/ui/select';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { PlusCircle, Settings, Trash2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PlusCircle, Settings, Trash2, Search, Bell } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -76,57 +76,62 @@ export function Header() {
     };
 
     return (
-        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:px-6">
-            <div className="flex flex-1 items-center gap-4">
-                <h1 className="text-sm font-medium text-muted-foreground mr-2">Organization context:</h1>
-                <div className="w-[250px]">
-                    <Select
-                        value={selectedCompanyId || ''}
-                        onValueChange={handleSelectChange}
-                        disabled={isLoading}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select Company" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">(All)</SelectItem>
-                            {companies.map((company) => (
-                                <SelectItem key={company.id} value={company.id}>
-                                    {company.name}
+        <header className="flex h-20 items-center gap-4 bg-transparent px-8">
+            {/* Title / Organization Context */}
+            <div className="flex flex-col">
+                <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+                <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Org:</span>
+                    <div className="w-[200px]">
+                        <Select
+                            value={selectedCompanyId || ''}
+                            onValueChange={handleSelectChange}
+                            disabled={isLoading}
+                        >
+                            <SelectTrigger className="h-8 border-none bg-transparent shadow-none p-0 focus:ring-0 text-slate-600 font-semibold hover:text-blue-600">
+                                <SelectValue placeholder="Select Company" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-slate-100 shadow-lg shadow-blue-900/5">
+                                <div className="p-2 text-xs font-semibold text-slate-400">Your Organizations</div>
+                                <SelectItem value="all">All Organizations</SelectItem>
+                                {companies.map((company) => (
+                                    <SelectItem key={company.id} value={company.id}>
+                                        {company.name}
+                                    </SelectItem>
+                                ))}
+                                <SelectSeparator className="my-2 bg-slate-100" />
+                                <SelectItem value="add_new" className="text-blue-600 font-medium focus:bg-blue-50 focus:text-blue-700">
+                                    <span className="flex items-center gap-2">
+                                        <PlusCircle className="w-4 h-4" />
+                                        Add New Organization
+                                    </span>
                                 </SelectItem>
-                            ))}
-                            <SelectSeparator />
-                            <SelectItem value="add_new" className="text-emerald-600 font-medium">
-                                <span className="flex items-center gap-2">
-                                    <PlusCircle className="w-4 h-4" />
-                                    Add New Organization
-                                </span>
-                            </SelectItem>
-                            <SelectItem value="manage" className="text-gray-600 font-medium">
-                                <span className="flex items-center gap-2">
-                                    <Settings className="w-4 h-4" />
-                                    Manage Organizations
-                                </span>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                                <SelectItem value="manage" className="text-slate-500 font-medium focus:bg-slate-50">
+                                    <span className="flex items-center gap-2">
+                                        <Settings className="w-4 h-4" />
+                                        Manage Organizations
+                                    </span>
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
             </div>
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Global Search Bar (Removed as per request) */}
+            <div className="flex-1" />
+
+            {/* Right Controls */}
             <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                    <div className="text-right hidden md:block">
-                        <p className="text-sm font-medium leading-none">Admin User</p>
-                        <p className="text-xs text-muted-foreground">admin@internal.local</p>
-                    </div>
-                    <Avatar>
-                        <AvatarFallback>AD</AvatarFallback>
-                    </Avatar>
-                </div>
+                {/* Bell and Admin User removed as per request */}
             </div>
 
             {/* Add Company Dialog */}
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogContent>
+                <DialogContent className="rounded-3xl border-none shadow-2xl">
                     <DialogHeader>
                         <DialogTitle>Add New Organization</DialogTitle>
                         <DialogDescription>
@@ -142,17 +147,18 @@ export function Header() {
                                 onChange={(e) => setNewCompanyName(e.target.value)}
                                 placeholder="e.g. Acme Corp Federal Systems"
                                 autoFocus
+                                className="rounded-xl border-slate-200"
                             />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                        <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="rounded-xl border-slate-200">
                             Cancel
                         </Button>
                         <Button
                             onClick={handleAddCompany}
                             disabled={!newCompanyName.trim() || isSubmitting}
-                            className="bg-emerald-600 hover:bg-emerald-700"
+                            className="bg-blue-600 hover:bg-blue-700 rounded-xl"
                         >
                             {isSubmitting ? "Creating..." : "Create Organization"}
                         </Button>
@@ -162,23 +168,23 @@ export function Header() {
 
             {/* Manage Organizations Dialog */}
             <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-md rounded-3xl border-none shadow-2xl">
                     <DialogHeader>
                         <DialogTitle>Manage Organizations</DialogTitle>
                         <DialogDescription>
-                            Manage your existing organization workspaces. Deleting an organization is permanent.
+                            Delete organizations. This action is permanent.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
                         {companies.length === 0 ? (
-                            <p className="text-sm text-center text-gray-500 py-4">No organizations found.</p>
+                            <p className="text-sm text-center text-slate-400 py-4">No organizations found.</p>
                         ) : (
                             <div className="space-y-3">
                                 {companies.map((company) => (
-                                    <div key={company.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                                    <div key={company.id} className="flex items-center justify-between p-3 border border-slate-100 rounded-2xl bg-slate-50/50">
                                         <div>
-                                            <p className="font-medium text-sm">{company.name}</p>
-                                            <p className="text-xs text-gray-500 truncate max-w-[200px]">{company.id}</p>
+                                            <p className="font-medium text-sm text-slate-700">{company.name}</p>
+                                            <p className="text-[10px] text-slate-400 truncate max-w-[200px] uppercase tracking-wide">ID: {company.id?.split('-')[0]}...</p>
                                         </div>
 
                                         {deleteConfirmId === company.id ? (
@@ -187,7 +193,7 @@ export function Header() {
                                                     size="sm"
                                                     variant="ghost"
                                                     onClick={() => setDeleteConfirmId(null)}
-                                                    className="h-8 px-2 text-xs"
+                                                    className="h-8 px-2 text-xs rounded-lg text-slate-500 hover:text-slate-700"
                                                 >
                                                     Cancel
                                                 </Button>
@@ -196,7 +202,7 @@ export function Header() {
                                                     variant="destructive"
                                                     onClick={() => handleRemoveCompany(company.id)}
                                                     disabled={isSubmitting}
-                                                    className="h-8 px-2 text-xs"
+                                                    className="h-8 px-2 text-xs rounded-lg bg-red-500 hover:bg-red-600"
                                                 >
                                                     {isSubmitting ? "..." : "Confirm"}
                                                 </Button>
@@ -205,7 +211,7 @@ export function Header() {
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                className="h-8 w-8 p-0 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full"
                                                 onClick={() => setDeleteConfirmId(company.id)}
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -217,7 +223,7 @@ export function Header() {
                         )}
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsManageDialogOpen(false)}>
+                        <Button variant="outline" onClick={() => setIsManageDialogOpen(false)} className="rounded-xl border-slate-200">
                             Close
                         </Button>
                     </DialogFooter>

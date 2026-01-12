@@ -176,7 +176,12 @@ export function OpportunityCard({
                     )}
                 </div>
 
-                <div className="border-t border-gray-100 px-2 py-2 flex items-center justify-end">
+                <div className="border-t border-gray-100 px-2 py-2 flex items-center justify-between">
+                    {/* Assigned Company */}
+                    <div className="text-xs text-gray-400 font-medium truncate max-w-[70%] px-1" title={opportunity.company_name}>
+                        {opportunity.company_name}
+                    </div>
+
                     {/* More Menu */}
                     <div className="relative">
                         <button

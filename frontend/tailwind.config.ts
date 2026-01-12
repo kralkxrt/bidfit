@@ -51,7 +51,8 @@ const config: Config = {
 					'5': 'hsl(var(--chart-5))'
 				},
 				brand: {
-					green: '#10B981',
+					blue: '#3B82F6',
+					green: '#10B981', // Keeping for legacy
 					'green-dark': '#059669',
 					'green-light': '#D1FAE5',
 				},

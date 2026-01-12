@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Plus, Search, FileText, ArrowRight } from "lucide-react";
+import { Plus, Search, FileText, ArrowRight, Trash2 } from "lucide-react";
 import { useCompanyStore } from "@/store/useCompanyStore";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -89,6 +89,18 @@ export default function OpportunitiesPage() {
             router.push(`/opportunities/${res.data.id}`);
         } catch (error) {
             console.error("Failed to create opportunity", error);
+        }
+    };
+
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation(); // Prevent row click
+        if (!confirm("Are you sure you want to delete this opportunity?")) return;
+
+        try {
+            await api.delete(`/api/opportunities/${id}`);
+            setOpportunities(prev => prev.filter(o => o.id !== id));
+        } catch (error) {
+            console.error("Failed to delete opportunity", error);
         }
     };
 
@@ -233,11 +245,21 @@ export default function OpportunitiesPage() {
                                                 : "-"}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="sm" asChild>
-                                                <Link href={`/opportunities/${opp.id}`}>
-                                                    View <ArrowRight className="ml-2 h-4 w-4" />
-                                                </Link>
-                                            </Button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Button variant="ghost" size="sm" asChild>
+                                                    <Link href={`/opportunities/${opp.id}`}>
+                                                        View <ArrowRight className="ml-2 h-4 w-4" />
+                                                    </Link>
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                    onClick={(e) => handleDelete(e, opp.id)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}

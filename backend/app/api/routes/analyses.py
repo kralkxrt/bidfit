@@ -54,6 +54,9 @@ class AnalysisDetailResponse(AnalysisResponse):
     evaluator_perspective: Optional[str]
     dimensional_scores: Optional[Dict[str, Any]]
     
+    # Phase 0 Integration
+    company_compliance: Optional[Dict[str, Any]]
+    
     raw_llm_response: Optional[str]
 
     class Config:

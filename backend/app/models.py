@@ -48,7 +48,47 @@ class Company(Base):
     zip_code = Column(String(20), nullable=True)
     country = Column(String(100), default='United States')
     website = Column(String(255), nullable=True)
+    linkedin_url = Column(String(255), nullable=True)
+
+    # Expanded Info
+    employee_count = Column(Integer, nullable=True)
+    founded_year = Column(Integer, nullable=True)
+    description = Column(Text, nullable=True)
     
+    # GovCon Specifics - Socioeconomic
+    business_size = Column(String(50), nullable=True) # 'small', 'large', 'other_than_small'
+    certifications = Column(JSONB, default=[]) # ['8a', 'hubzone', 'sdvosb', 'wosb', 'edwosb']
+    certification_details = Column(JSONB, default={}) # {cert: {expiration_date: '...', number: '...'}}
+    
+    # Contract Vehicles
+    gsa_schedules = Column(JSONB, default=[]) # [{schedule: 'MAS', contract_number: '...', sins: []}]
+    contract_vehicles = Column(JSONB, default=[]) # ['OASIS Pool 1', 'SEWP V']
+    
+    # Capabilities
+    # Note: primary_naics is already defined above as PG_ARRAY, let's keep that but maybe also support a single primary string if needed? 
+    # The existing primary_naics is PG_ARRAY(String). Let's treat that as "All NAICS" or rename/add new fields?
+    # User asked for: naics_codes (list) and primary_naics (string).
+    # Existing `primary_naics` is an Array. Let's rename existing to `naics_codes` if we can or just use strict naming.
+    # To avoid data loss/migration pain on MVP, let's keep existing `primary_naics` array as the list of codes (it was likely intended as such) 
+    # and add a new `primary_naic` (singular) string.
+    # Actually wait, `primary_naics = Column(PG_ARRAY(String))` implies multiple. Let's use that for "naics_codes" effectively.
+    # And add `primary_naic_code` for the single primary.
+    
+    primary_naic_code = Column(String(6), nullable=True)
+    # reusing primary_naics as the list for now, or we can alias in schema.
+    
+    service_areas = Column(JSONB, default=[]) # ['IT Services', 'Logistics']
+    facility_clearance = Column(String(50), nullable=True) # 'none', 'confidential', 'secret', 'top_secret'
+    geographic_coverage = Column(JSONB, default=[])
+    
+    # Financial
+    annual_revenue = Column(sqlalchemy.BigInteger, nullable=True)
+    bonding_capacity = Column(sqlalchemy.BigInteger, nullable=True)
+    
+    # Relationships
+    teaming_partners = Column(JSONB, default=[]) # [{name, relationship}]
+    typical_role = Column(String(50), nullable=True) # 'prime', 'sub'
+
     settings = Column(JSONB, default={})
     
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -244,6 +284,9 @@ class Analysis(Base):
     evaluator_perspective = Column(Text, nullable=True)     # Government evaluator summary
     overall_relevance_label = Column(String(50), nullable=True) # e.g. "RELEVANT", "VERY RELEVANT"
     dimensional_scores = Column(JSONB, nullable=True)       # Enhanced with strengths/weaknesses/gaps per dimension
+    
+    # Phase 0 Integration
+    company_compliance = Column(JSONB, nullable=True)       # {qualification_status, compliance_flags, disqualifiers}
     
     analysis_notes = Column(Text, nullable=True)
     user_notes = Column(Text, nullable=True)

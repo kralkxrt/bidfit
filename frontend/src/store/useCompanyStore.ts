@@ -5,6 +5,43 @@ import api from '@/lib/api';
 export interface Company {
     id: string;
     name: string;
+    website?: string;
+    linkedin_url?: string;
+    address_line1?: string;
+    address_line2?: string;
+    city?: string;
+    state?: string;
+    zip_code?: string;
+    country?: string;
+
+    // Extended Info
+    employee_count?: number;
+    founded_year?: number;
+    description?: string;
+
+    // GovCon
+    uei?: string;
+    cage_code?: string;
+    business_size?: string;
+    certifications?: string[];
+    certification_details?: Record<string, unknown>;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    gsa_schedules?: any[];
+    contract_vehicles?: string[];
+
+    naics_codes?: string[];
+    primary_naic_code?: string;
+    service_areas?: string[];
+    facility_clearance?: string;
+    geographic_coverage?: string[];
+
+    annual_revenue?: number;
+    bonding_capacity?: number;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    teaming_partners?: any[];
+    typical_role?: string;
 }
 
 interface CompanyState {
@@ -15,6 +52,7 @@ interface CompanyState {
 
     fetchCompanies: () => Promise<void>;
     addCompany: (name: string) => Promise<void>;
+    updateCompany: (id: string, data: Partial<Company>) => Promise<void>;
     removeCompany: (id: string) => Promise<void>;
     selectCompany: (id: string) => void;
     getSelectedCompany: () => Company | undefined;
@@ -73,7 +111,31 @@ export const useCompanyStore = create<CompanyState>()(
                         error: message,
                         isLoading: false
                     });
-                    throw error; // Re-throw so component knows it failed
+                    throw error;
+                }
+            },
+
+            updateCompany: async (id: string, data: Partial<Company>) => {
+                set({ isLoading: true, error: null });
+                try {
+                    const response = await api.patch(`/api/companies/${id}`, data);
+                    const updatedCompany = response.data;
+
+                    const { companies } = get();
+                    const updatedList = companies.map(c => c.id === id ? updatedCompany : c);
+
+                    set({
+                        companies: updatedList,
+                        isLoading: false
+                    });
+                } catch (error: unknown) {
+                    console.error('Failed to update company:', error);
+                    const message = error instanceof Error ? error.message : 'Failed to update company';
+                    set({
+                        error: message,
+                        isLoading: false
+                    });
+                    throw error;
                 }
             },
 

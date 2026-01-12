@@ -62,8 +62,16 @@ class AnalysisEngine:
         if not documents:
              raise ValueError("No valid documents found for analysis")
 
+        # 2.5 Fetch Company Profile for Phase 0 Check
+        company_query = select(Company).where(Company.id == company_id)
+        comp_res = await db.execute(company_query)
+        company = comp_res.scalars().first()
+        
+        if not company:
+             raise ValueError("Company profile not found")
+
         # 3. Construct Prompt
-        prompt = self._construct_analysis_prompt(opportunity, parsed_requirements, documents)
+        prompt = self._construct_analysis_prompt(opportunity, parsed_requirements, documents, company)
         
         # 4. Call LLM
         # Using a higher max_tokens for analysis (8000)
@@ -115,6 +123,9 @@ class AnalysisEngine:
 
             dimensional_scores=analysis_data.get("dimensional_scores", {}),
             
+            # Phase 0
+            company_compliance=analysis_data.get("company_compliance", {}),
+            
             agent_confidence=float(analysis_data.get("confidence_score", 0.0)) if "confidence_score" in analysis_data else 0.0,
             raw_llm_response=analysis_response_text,
             
@@ -128,7 +139,7 @@ class AnalysisEngine:
         
         return analysis
 
-    def _construct_analysis_prompt(self, opportunity: Opportunity, requirements: Dict, documents: List[Document]) -> str:
+    def _construct_analysis_prompt(self, opportunity: Opportunity, requirements: Dict, documents: List[Document], company: Company) -> str:
         
         # Format Opportunity Details
         opp_details = f"""
@@ -172,9 +183,34 @@ class AnalysisEngine:
 ---
 """
 
+        # Format Company Data
+        company_data = f"""
+**Name**: {company.name}
+**Business Size**: {company.business_size or 'N/A'}
+**Certifications**: {', '.join(company.certifications) if company.certifications else 'None'}
+**GSA Schedules**: {', '.join([s.get('contract_number', 'N/A') for s in company.gsa_schedules]) if company.gsa_schedules else 'None'}
+**Facility Clearance**: {company.facility_clearance or 'None'}
+**NAICS Codes**: {', '.join(company.naics_codes) if company.naics_codes else 'None'}
+**Geographic Coverage**: {', '.join(company.geographic_coverage) if company.geographic_coverage else 'None'}
+**Bonding Capacity**: {company.bonding_capacity or 'N/A'}
+"""
+
         # BidFit v2.0 JSON Schema
         json_schema = """
 {
+  "company_compliance": {
+    "qualification_status": "QUALIFIED|CONDITIONAL|DISQUALIFIED",
+    "disqualifiers": ["List of automatic disqualifiers found"],
+    "compliance_flags": [
+      {
+        "field": "facility_clearance",
+        "requirement": "Secret Clearance",
+        "company_value": "Confidential",
+        "status": "GAP|WEAKNESS|COMPLIANT",
+        "note": "Explanation"
+      }
+    ]
+  },
   "requirements_matrix": [
     {
       "req_id": "PWS-2.1.6.1",
@@ -309,6 +345,41 @@ You are an expert Government Contract Proposal Evaluator conducting a Past Perfo
 6. **SHORT DURATION FLAG**: Contracts with <12 months performance have "limited track record" - flag this in recency assessment.
 
 7. **SCOPE MISMATCH DETECTION**: If a PP contract's primary scope differs significantly from the opportunity (e.g., facility management vs. HAZMAT operations), question its relevance and note it may be "padding."
+
+---
+
+## PHASE 0: COMPANY QUALIFICATION CHECK (Do First)
+Before analyzing past performance, check if the company is QUALIFIED to bid based on their profile data.
+
+**Company Profile**:
+{company_data}
+
+**Check these against the opportunity details**:
+
+1. **SET-ASIDE COMPLIANCE**
+   - If opportunity is "8(a) Set-Aside" and company lacks 8(a) certification → DISQUALIFIED
+   - If opportunity is "Small Business Set-Aside" and company is "Large Business" (Other Than Small) → DISQUALIFIED
+   - If opportunity is "SDVOSB" and company lacks SDVOSB → DISQUALIFIED
+   - Check certification usage.
+
+2. **CLEARANCE REQUIREMENTS**
+   - If opportunity requires "Top Secret" and company has "Secret" or "None" → GAP / DISQUALIFIED (depending on if they can sponsor)
+   - If opportunity requires "Secret" and company has "None" → DISQUALIFIED
+
+3. **CONTRACT VEHICLE REQUIREMENTS**
+   - If opportunity notes "GSA Schedule required" and company has none → DISQUALIFIED
+   - If opportunity is under OASIS/SEWP/etc. and company lacks access → DISQUALIFIED
+
+4. **NAICS CODE CHECK**
+   - If opportunity NAICS not in company's registered codes → FLAG (Need to add)
+
+5. **GEOGRAPHIC REQUIREMENTS**
+   - If opportunity requires OCONUS and company only does CONUS → FLAG
+
+**Output a `company_compliance` section**:
+- `qualification_status`: "QUALIFIED" | "CONDITIONAL" | "DISQUALIFIED"
+- `compliance_flags`: List of specific checks {field, requirement, company_value, status, note}
+- `disqualifiers`: List of automatic disqualifiers found.
 
 ---
 

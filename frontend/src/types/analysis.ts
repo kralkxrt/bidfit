@@ -80,11 +80,26 @@ export interface Analysis {
 
     created_at: string;
 
+    // Phase 0
+    company_compliance?: {
+        qualification_status: 'QUALIFIED' | 'CONDITIONAL' | 'DISQUALIFIED';
+        disqualifiers: string[];
+        compliance_flags: Array<{
+            field: string;
+            requirement: string;
+            company_value: string;
+            status: 'COMPLIANT' | 'GAP' | 'WEAKNESS' | 'FLAG';
+            note: string;
+        }>;
+    };
+
     // Legacy fields (optional)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     gap_matrix?: any;
     scope_score?: string;
     magnitude_score?: string;
     complexity_score?: string;
     recency_score?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     document_assessments?: any[];
 }

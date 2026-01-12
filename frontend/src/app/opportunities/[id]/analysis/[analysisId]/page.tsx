@@ -14,6 +14,7 @@ import { RedGaps } from "@/components/analysis/RedGaps";
 import { EvaluatorPerspective } from "@/components/analysis/EvaluatorPerspective";
 import { ContractAssessments } from "@/components/analysis/ContractAssessments";
 import { DimensionalScores } from "@/components/analysis/DimensionalScores";
+import { CompanyComplianceCard } from "@/components/analysis/CompanyComplianceCard";
 import { Analysis } from "@/types/analysis";
 import { cn } from "@/lib/utils";
 
@@ -279,6 +280,11 @@ export default function AnalysisResultsPage() {
                     {renderGoNoGoBadge(analysis.go_no_go_recommendation)}
                 </div>
             </div>
+
+            {/* Company Compliance Check (Phase 0) */}
+            {analysis.company_compliance && (
+                <CompanyComplianceCard compliance={analysis.company_compliance} />
+            )}
 
             {/* Green Flags - Key Strengths */}
             <GreenFlags strengths={strengths} />

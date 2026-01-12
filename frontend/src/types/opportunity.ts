@@ -19,6 +19,7 @@ export interface Opportunity {
     id: string;
     title: string;
     agency: string;
+    company_name?: string;
     solicitation_number?: string;
     response_due_date?: string;
     estimated_value?: number;

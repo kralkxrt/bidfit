@@ -1,5 +1,5 @@
 from typing import List, Any
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from sqlalchemy.orm import selectinload
@@ -78,3 +78,58 @@ async def delete_company(
     await db.delete(company)
     await db.commit()
     return None
+
+@router.get("/{id}", response_model=CompanyResponse)
+async def get_company(
+    id: UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get a specific company profile.
+    """
+    result = await db.execute(
+        select(Company)
+        .join(UserCompany, UserCompany.company_id == Company.id)
+        .where(and_(Company.id == id, UserCompany.user_id == current_user.id))
+    )
+    company = result.scalars().first()
+    
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+        
+    return company
+
+from app.schemas import CompanyUpdate
+
+@router.patch("/{id}", response_model=CompanyResponse)
+async def update_company(
+    id: UUID,
+    company_update: CompanyUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Update a company profile.
+    """
+    # Verify access
+    result = await db.execute(
+        select(Company)
+        .join(UserCompany, UserCompany.company_id == Company.id)
+        .where(and_(Company.id == id, UserCompany.user_id == current_user.id))
+    )
+    company = result.scalars().first()
+    
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+        
+    # Update fields
+    update_data = company_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(company, key, value)
+        
+    db.add(company)
+    await db.commit()
+    await db.refresh(company)
+    
+    return company

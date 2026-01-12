@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, or_, and_, func, text
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models import User, Opportunity, OpportunityDocument, Company, Analysis
@@ -62,7 +63,9 @@ async def list_opportunities(
         .subquery()
     )
 
-    query = select(Opportunity)
+    query = select(Opportunity).options(
+        selectinload(Opportunity.company)
+    )
     
     if company_id:
         query = query.where(Opportunity.company_id == company_id)
@@ -134,6 +137,10 @@ async def list_opportunities(
         
         # A better way is to attach the analysis summary to the opportunity object dynamically
         for opp in opportunities:
+            # Map company name manually since it's on a relationship
+            if opp.company:
+                opp.company_name = opp.company.name
+                
             analysis = analyses_map.get(opp.id)
             if analysis:
                 opp.latest_analysis = {
@@ -448,8 +455,28 @@ async def delete_opportunity_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     
+    
     # Hard delete for opportunity documents (or soft delete if preferred)
     await db.delete(document)
     await db.commit()
     
     return {"message": "Document deleted successfully"}
+
+@router.delete("/{id}", status_code=204)
+async def delete_opportunity(
+    id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete an opportunity."""
+    
+    query = select(Opportunity).where(Opportunity.id == id)
+    result = await db.execute(query)
+    opp = result.scalars().first()
+    
+    if not opp:
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+        
+    await db.delete(opp)
+    await db.commit()
+    return None

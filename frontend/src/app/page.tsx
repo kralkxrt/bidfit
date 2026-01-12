@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { FileText, FolderOpen, BarChart3, ArrowRight } from "lucide-react";
+import { FileText, FolderOpen, BarChart3, ArrowRight, Hexagon } from "lucide-react";
 import { useCompanyStore } from "@/store/useCompanyStore";
 import api from "@/lib/api";
 import {
@@ -192,128 +192,147 @@ export default function Home() {
 
   if (!selectedCompanyId) {
     return (
-      <div className="flex flex-col gap-6">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Select a company to begin.</p>
+      <div className="flex flex-col items-center justify-center p-20 gap-6 text-center">
+        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+          <Hexagon className="w-10 h-10 text-blue-500" />
+        </div>
+        <h1 className="text-3xl font-bold text-slate-900">Welcome to BidFit</h1>
+        <p className="text-slate-500 max-w-md">Select an organization from the top menu to view your bid pipeline and intelligence dashboard.</p>
+        <Button onClick={() => (window as any).document.querySelector('[data-radix-collection-item]')?.click()} variant="outline" className="rounded-xl mt-4">
+          Select Organization
+        </Button>
       </div>
     );
   }
 
+  // Calculate Avg Match Score
+  const matchScores = opportunities
+    .map(o => o.latest_analysis?.overall_relevance_score)
+    .filter(Boolean)
+    .map(s => parseFloat(s as string))
+    .filter(n => !isNaN(n));
+
+  const avgMatch = matchScores.length > 0
+    ? Math.round(matchScores.reduce((a, b) => a + b, 0) / matchScores.length)
+    : 0;
+
   return (
-    <div className="flex flex-col gap-6 pb-20">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your gap analysis activity</p>
+    <div className="flex flex-col gap-8 pb-20">
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Card 1: Total Opportunities */}
+        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-start justify-between group hover:shadow-md transition-all duration-300">
+          <div>
+            <p className="text-sm font-medium text-slate-400 mb-1">Total Opportunities</p>
+            <div className="text-4xl font-bold text-slate-900 mb-2">{loading ? "-" : stats.opportunities}</div>
+            <div className="flex items-center gap-1 text-emerald-500 text-xs font-medium bg-emerald-50 px-2 py-1 rounded-full w-fit">
+              <span>Active Pipeline</span>
+            </div>
+          </div>
+          <div className="bg-blue-50 p-3 rounded-2xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+            <FolderOpen className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Card 2: Avg Match Score */}
+        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-start justify-between group hover:shadow-md transition-all duration-300">
+          <div>
+            <p className="text-sm font-medium text-slate-400 mb-1">Pipeline Match %</p>
+            <div className="text-4xl font-bold text-slate-900 mb-2">{loading ? "-" : `${avgMatch}%`}</div>
+            <div className="flex items-center gap-1 text-blue-500 text-xs font-medium bg-blue-50 px-2 py-1 rounded-full w-fit">
+              <span>Avg Relevance</span>
+            </div>
+          </div>
+          <div className="bg-purple-50 p-3 rounded-2xl text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+            <BarChart3 className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Card 3: Analyses Run */}
+        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-start justify-between group hover:shadow-md transition-all duration-300">
+          <div>
+            <p className="text-sm font-medium text-slate-400 mb-1">Analyses Run</p>
+            <div className="text-4xl font-bold text-slate-900 mb-2">{loading ? "-" : stats.analyses}</div>
+            <div className="flex items-center gap-1 text-slate-400 text-xs font-medium bg-slate-50 px-2 py-1 rounded-full w-fit">
+              <span>All time</span>
+            </div>
+          </div>
+          <div className="bg-orange-50 p-3 rounded-2xl text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+            <FileText className="w-6 h-6" />
+          </div>
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* ... Keep existing cards ... */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Documents</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : stats.documents}</div>
-            <p className="text-xs text-muted-foreground">Past performance references</p>
-          </CardContent>
-        </Card>
+      {/* Pipeline Section (Full Width) */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-slate-900">Pipeline Overview</h2>
+          <Button variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 text-sm font-medium" asChild>
+            <Link href="/opportunities">View Full Pipeline</Link>
+          </Button>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Opportunities</CardTitle>
-            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : stats.opportunities}</div>
-            <p className="text-xs text-muted-foreground">Active pursuits</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Analyses</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : stats.analyses}</div>
-            <p className="text-xs text-muted-foreground">Gap analyses completed</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Pipeline View */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4 text-gray-900">Pipeline</h2>
         {loading ? (
-          <div className="h-64 flex items-center justify-center border rounded-xl bg-gray-50">Loading pipeline...</div>
+          <div className="h-96 flex items-center justify-center border border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
+              <p className="text-slate-400 text-sm">Syncing pipeline data...</p>
+            </div>
+          </div>
         ) : (
-          <PipelineView
-            opportunities={opportunities}
-            summary={pipelineSummary}
-            onStageChange={handleStageChange}
-            onHide={handleHide}
-            onRestore={handleRestore}
-            onToggleFavorite={handleToggleFavorite}
-            onRefresh={fetchDashboardData}
-          />
+          <div className="bg-white p-1 rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+            <PipelineView
+              opportunities={opportunities}
+              summary={pipelineSummary}
+              onStageChange={handleStageChange}
+              onHide={handleHide}
+              onRestore={handleRestore}
+              onToggleFavorite={handleToggleFavorite}
+              onRefresh={fetchDashboardData}
+            />
+          </div>
         )}
       </div>
 
-      {/* Recent Analyses (Keep at bottom) */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Recent Analyses</CardTitle>
-              <CardDescription>Your latest gap analysis results</CardDescription>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/analyses">
-                View All <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-4 text-muted-foreground">Loading...</div>
-          ) : recentAnalyses.length === 0 ? (
-            <div className="text-center py-8">
-              <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No analyses yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Run your first gap analysis to see results here.
-              </p>
-              <Button asChild>
-                <Link href="/opportunities">Go to Opportunities</Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {recentAnalyses.map((analysis) => (
-                <Link
-                  key={analysis.id}
-                  href={`/opportunities/${analysis.opportunity_id}/analysis/${analysis.id}`}
-                  className="flex items-center justify-between p-3 border rounded-md hover:bg-muted transition-colors"
-                >
-                  <div className="flex-1">
-                    <div className="font-medium">{analysis.opportunity_title}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {format(new Date(analysis.created_at), "MMM d, yyyy")}
+      {/* Recent Activity Section (Bottom, Horizontal) */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-slate-900">Recent Activity</h2>
+          <Button variant="outline" className="rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50" asChild>
+            <Link href="/analyses">View All History</Link>
+          </Button>
+        </div>
+
+        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 overflow-x-auto">
+          <div className="flex gap-6 min-w-max">
+            {loading ? (
+              [1, 2, 3, 4].map(i => (
+                <div key={i} className="w-72 h-32 rounded-2xl bg-slate-50 animate-pulse border border-slate-100" />
+              ))
+            ) : recentAnalyses.length === 0 ? (
+              <div className="w-full text-center py-10 text-slate-400">
+                <p>No recent activity.</p>
+              </div>
+            ) : (
+              recentAnalyses.map((analysis) => (
+                <div key={analysis.id} className="w-80 p-4 rounded-2xl border border-slate-100 hover:shadow-md transition-all duration-300 bg-slate-50/50 hover:bg-white group cursor-pointer relative overflow-hidden">
+                  <Link href={`/opportunities/${analysis.opportunity_id}/analysis/${analysis.id}`} className="absolute inset-0 z-10" />
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-blue-600 border border-slate-100 group-hover:scale-110 transition-transform">
+                      <BarChart3 className="w-5 h-5" />
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
                     {getScoreBadge(analysis.overall_relevance_score)}
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  <h3 className="font-semibold text-slate-900 truncate mb-1 pr-2">{analysis.opportunity_title}</h3>
+                  <p className="text-xs text-slate-400">{format(new Date(analysis.created_at), "MMM d, h:mm a")}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }
