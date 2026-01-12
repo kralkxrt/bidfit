@@ -46,7 +46,7 @@ export function Sidebar() {
                     <div className="flex flex-col items-end">
                         <div className="text-2xl font-bold tracking-tight leading-none">
                             <span className="text-slate-900">Bid</span>
-                            <span className="text-blue-600">Fit</span>
+                            <span className="text-blue-600">Match</span>
                         </div>
                         <span className="text-[8px] font-semibold text-slate-400 pr-0.5">from Pera Inc.</span>
                     </div>

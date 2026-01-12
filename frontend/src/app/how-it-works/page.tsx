@@ -35,7 +35,7 @@ export default function HowItWorksPage() {
                         Stop Guessing. <span className="text-blue-600">Start Winning.</span>
                     </h1>
                     <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
-                        BidFit performs the same rigorous analysis that government evaluators conduct—before you submit. Eliminate guesswork and validate your win strategy.
+                        BidMatch performs the same rigorous analysis that government evaluators conduct—before you submit. Eliminate guesswork and validate your win strategy.
                     </p>
                     <div className="pt-4">
                         <Link href="/documents">
@@ -82,7 +82,7 @@ export default function HowItWorksPage() {
             <div className="py-20 px-6 sm:px-12 bg-slate-50 border-y border-slate-200">
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold text-slate-900 mb-4">How BidFit Works</h2>
+                        <h2 className="text-3xl font-bold text-slate-900 mb-4">How BidMatch Works</h2>
                         <p className="text-lg text-slate-600">
                             Our 6-step deep analysis process simulates a GS-15 evaluator's review.
                         </p>
@@ -135,7 +135,7 @@ export default function HowItWorksPage() {
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-bold text-slate-900 mb-4">Hard-Coded Skepticism</h2>
                         <p className="text-lg text-slate-600">
-                            We built BidFit to be tough. Here are the rules that keep our analysis trustworthy.
+                            We built BidMatch to be tough. Here are the rules that keep our analysis trustworthy.
                         </p>
                     </div>
 
@@ -217,6 +217,19 @@ export default function HowItWorksPage() {
                 </div>
             </div>
 
+            {/* Footer */}
+            <footer className="bg-slate-100 py-12 px-6 sm:px-12 border-t border-slate-200">
+                <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-8">
+                    <div className="flex items-center gap-2">
+                        <div className="text-2xl font-bold tracking-tight text-slate-900">
+                            Bid<span className="text-blue-600">Match</span>
+                        </div>
+                    </div>
+                    <p className="text-sm text-slate-500">
+                        © 2024 Pera Inc. All rights reserved.
+                    </p>
+                </div>
+            </footer>
         </div>
     );
 }

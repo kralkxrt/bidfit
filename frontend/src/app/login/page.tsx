@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Lock } from "lucide-react";
+import { Lock, Hexagon } from "lucide-react";
 
 export default function LoginPage() {
     const [username, setUsername] = useState("");
@@ -43,14 +43,14 @@ export default function LoginPage() {
         <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
             <Card className="w-full max-w-md shadow-lg border-slate-200">
                 <CardHeader className="space-y-1 text-center">
-                    <div className="flex justify-center mb-4">
-                        <div className="bg-blue-100 p-3 rounded-full">
-                            <Lock className="w-6 h-6 text-blue-600" />
+                    <div className="mb-8 flex flex-col items-center">
+                        <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 mb-6 group-hover:scale-105 transition-transform duration-300">
+                            <Hexagon className="w-8 h-8 text-white fill-white" />
                         </div>
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                            Bid<span className="text-blue-600">Match</span>
+                        </h1>
                     </div>
-                    <CardTitle className="text-2xl font-bold text-slate-900">
-                        BidFit Access
-                    </CardTitle>
                     <CardDescription>
                         Enter the secure password to continue
                     </CardDescription>

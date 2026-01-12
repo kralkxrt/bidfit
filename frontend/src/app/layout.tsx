@@ -15,7 +15,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Bidfit - GovCon Gap Analysis",
+  title: "BidMatch - GovCon Gap Analysis",
   description: "AI-powered past performance gap analysis for government contractors",
 };
 
