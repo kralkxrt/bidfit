@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Upload, FileText, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Loader2, Trash2, RefreshCw } from "lucide-react";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,7 @@ import {
     CardDescription,
     CardHeader,
     CardTitle,
+    CardFooter,
 } from "@/components/ui/card";
 import {
     Tabs,
@@ -23,6 +24,29 @@ import { Badge } from "@/components/ui/badge";
 // Simple toast mock if not present (assuming shadcn standard though)
 // Actually let's assume standard shadcn layout isn't fully scaffolded with Toaster
 // We'll use simple alert/console for now in catch blocks.
+
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
+import { MessageDialog } from "@/components/ui/MessageDialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { X } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface Opportunity {
     id: string;
@@ -46,6 +70,7 @@ interface OpportunityDocument {
     filename: string;
     document_type: string;
     processed_at: string;
+    created_at?: string; // For ordering documents (RFP first, then amendments)
     parsed_requirements?: {
         requirements: {
             id: string;
@@ -69,6 +94,20 @@ export default function OpportunityDetailPage() {
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [docToDelete, setDocToDelete] = useState<string | null>(null);
+    const [isDeletingDoc, setIsDeletingDoc] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+
+    // Multi-file upload state
+    const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [uploadDocType, setUploadDocType] = useState<string>("pws");
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [dragActive, setDragActive] = useState(false);
+
+    // Message Dialog State
+    const [messageOpen, setMessageOpen] = useState(false);
+    const [messageData, setMessageData] = useState({ title: "", description: "", variant: "default" as "default" | "error" | "success" | "info" });
 
     const fetchOpportunity = async () => {
         try {
@@ -97,69 +136,178 @@ export default function OpportunityDetailPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
+    // Obsolete single-file upload handlers removed.
 
-        const file = files[0];
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("document_type", "pws"); // Defaulting to PWS for Phase 3
-
-        setUploading(true);
+    const confirmDeleteDocument = async () => {
+        if (!docToDelete) return;
+        setIsDeletingDoc(true);
         try {
-            const res = await api.post(`/api/opportunities/${id}/documents`, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            });
-
-            // Add to local state (MVP shortcut)
-            setDocuments(prev => [res.data, ...prev]);
-
-        } catch (error) {
-            console.error("Upload failed", error);
-            alert("Upload failed. Check console.");
-        } finally {
-            setUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = "";
-        }
-    };
-
-    const handleDeleteDocument = async (docId: string) => {
-        if (!confirm("Delete this document? This will remove all extracted requirements.")) return;
-
-        try {
-            await api.delete(`/api/opportunities/${id}/documents/${docId}`);
+            await api.delete(`/api/opportunities/${id}/documents/${docToDelete}`);
             fetchOpportunity(); // Refresh
+            setDocToDelete(null);
         } catch (error) {
             console.error("Delete failed", error);
             alert("Failed to delete document.");
+        } finally {
+            setIsDeletingDoc(false);
         }
     };
 
-    const handleUploadAmendment = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    const handleRescan = async () => {
+        setRefreshing(true);
+        try {
+            await api.post(`/api/opportunities/${id}/rescan`);
+            // Refresh opportunity to get new requirements
+            await fetchOpportunity();
+
+            setMessageData({
+                title: "Requirements Updated",
+                description: "Requirements have been successfully re-scanned from the latest document.",
+                variant: "success"
+            });
+            setMessageOpen(true);
+        } catch (error) {
+            console.error("Rescan failed", error);
+            setMessageData({
+                title: "Rescan Failed",
+                description: "Failed to re-scan requirements. Please try again or upload the document again.",
+                variant: "error"
+            });
+            setMessageOpen(true);
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const files = Array.from(e.dataTransfer.files);
+            // Size check (50MB)
+            const validFiles = files.filter(file => file.size <= 50 * 1024 * 1024);
+
+            if (validFiles.length !== files.length) {
+                setMessageData({
+                    title: "Files Rejected",
+                    description: "Some files were rejected because they exceed the 50MB limit.",
+                    variant: "error"
+                });
+                setMessageOpen(true);
+            }
+
+            if (validFiles.length > 0) {
+                setSelectedFiles(prev => [...prev, ...validFiles]);
+            }
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const files = Array.from(e.target.files);
+            const validFiles = files.filter(file => file.size <= 50 * 1024 * 1024);
+            if (validFiles.length !== files.length) {
+                setMessageData({
+                    title: "Files Rejected",
+                    description: "Some files were rejected because they exceed the 50MB limit.",
+                    variant: "error"
+                });
+                setMessageOpen(true);
+            }
+            setSelectedFiles(prev => [...prev, ...validFiles]);
+        }
+    };
+
+    const handleBatchUpload = async () => {
+        if (selectedFiles.length === 0) return;
 
         setUploading(true);
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("document_type", "amendment");
+        setUploadProgress(0);
+
+        const totalFiles = selectedFiles.length;
+        let completedFiles = 0;
+        const failedFiles: { name: string; reason: string }[] = [];
 
         try {
-            await api.post(`/api/opportunities/${id}/documents`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-            fetchOpportunity(); // Refresh
+            for (const file of selectedFiles) {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                // Auto-detect type based on name if possible, else use selected type
+                let typeToUse = uploadDocType;
+                const lowerName = file.name.toLowerCase();
+                if (lowerName.includes("pws") || lowerName.includes("sow") || lowerName.includes("statement")) {
+                    typeToUse = "pws";
+                } else if (lowerName.includes("rfp") || lowerName.includes("solicitation")) {
+                    typeToUse = "rfp";
+                } else if (lowerName.includes("amend")) {
+                    typeToUse = "amendment";
+                }
+
+                formData.append("document_type", typeToUse);
+
+                try {
+                    await api.post(`/api/opportunities/${id}/documents`, formData, {
+                        headers: { "Content-Type": "multipart/form-data" },
+                    });
+                    completedFiles++;
+                    setUploadProgress((completedFiles / totalFiles) * 100);
+                } catch (error: any) {
+                    console.error(`Failed to upload ${file.name}`, error);
+                    const msg = error.response?.data?.detail || error.message || "Unknown error";
+                    failedFiles.push({ name: file.name, reason: msg });
+                }
+            }
+
+            // Success or partial success
+            setIsUploadDialogOpen(false);
+            setSelectedFiles([]);
+            setUploadProgress(0);
+            fetchOpportunity(); // Refresh list
+
+            if (failedFiles.length > 0) {
+                const description = failedFiles.length === 1
+                    ? `Failed to upload ${failedFiles[0].name}: ${failedFiles[0].reason}`
+                    : `Failed to upload ${failedFiles.length} files:\n` + failedFiles.map(f => `• ${f.name}: ${f.reason}`).join('\n');
+
+                setMessageData({
+                    title: "Upload Completed with Errors",
+                    description: description,
+                    variant: "error"
+                });
+                setMessageOpen(true);
+            }
+
         } catch (error) {
-            console.error("Amendment upload failed", error);
-            alert("Upload failed");
+            console.error("Batch upload error", error);
+            setMessageData({
+                title: "Upload Failed",
+                description: "An unexpected error occurred during upload.",
+                variant: "error"
+            });
+            setMessageOpen(true);
         } finally {
             setUploading(false);
-            if (e.target) e.target.value = "";
         }
     };
+
+    // Keep legacy single handlers for now if needed, or remove them. 
+    // The user requirement implies replacing/enhancing. 
+    // I will comment them out or remove them to avoid unused code if I replace the UI buttons.
+    // For safety, I'll keep handleFileUpload for the "Empty State" button which I might refactor later, 
+    // but the instruction says "add multiple additional documents".
+    // I will assume the new dialog replaces the amendment upload button logic too.
 
     if (loading) {
         return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -169,9 +317,29 @@ export default function OpportunityDetailPage() {
         return <div>Opportunity not found</div>;
     }
 
-    // Get requirements from the most recent PWS doc
-    const latestDoc = documents.length > 0 ? documents[0] : null;
-    const requirements = latestDoc?.parsed_requirements?.requirements || [];
+    // Consolidate requirements from ALL documents with amendment override logic
+    // 1. Sort documents by created_at (oldest first = main RFP, newest = latest amendments)
+    // 2. Build a map of requirement ID → requirement (later docs override earlier for same ID)
+    // 3. Return consolidated list with most current versions
+    const sortedDocs = [...documents].sort((a, b) =>
+        new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
+    );
+
+    const requirementsMap = new Map<string, { id: string; text: string; category: string; criticality: string; source?: string }>();
+
+    for (const doc of sortedDocs) {
+        const docReqs = doc.parsed_requirements?.requirements || [];
+        for (const req of docReqs) {
+            // Use requirement ID as key - amendments override RFP for same ID
+            requirementsMap.set(req.id, {
+                ...req,
+                source: doc.filename // Track which document this came from
+            });
+        }
+    }
+
+    // Convert map back to array
+    const requirements = Array.from(requirementsMap.values());
 
     return (
         <div className="space-y-6">
@@ -210,16 +378,9 @@ export default function OpportunityDetailPage() {
                                     Upload a Performance Work Statement (PWS) or Statement of Objectives (SOO) to automatically extract requirements.
                                 </CardDescription>
                                 <div className="mt-6">
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        className="hidden"
-                                        accept=".pdf,.docx,.txt"
-                                        onChange={handleFileUpload}
-                                    />
-                                    <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                                        {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                                        {uploading ? "Analyzing Document..." : "Upload PWS / SOW"}
+                                    <Button onClick={() => setIsUploadDialogOpen(true)} disabled={uploading}>
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        Upload PWS / SOW
                                     </Button>
                                 </div>
                             </CardHeader>
@@ -229,16 +390,13 @@ export default function OpportunityDetailPage() {
                             <div className="flex justify-between items-center">
                                 <h3 className="text-lg font-medium">Extracted Requirements ({requirements.length})</h3>
                                 <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                                        <Upload className="mr-2 h-4 w-4" /> Upload Amendment
+                                    <Button variant="outline" size="sm" onClick={handleRescan} disabled={refreshing}>
+                                        <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                                        {refreshing ? "Scanning..." : "Re-scan"}
                                     </Button>
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        className="hidden"
-                                        accept=".pdf,.docx,.txt"
-                                        onChange={handleUploadAmendment}
-                                    />
+                                    <Button variant="outline" size="sm" onClick={() => setIsUploadDialogOpen(true)}>
+                                        <Upload className="mr-2 h-4 w-4" /> Upload Document
+                                    </Button>
                                 </div>
                             </div>
 
@@ -262,7 +420,7 @@ export default function OpportunityDetailPage() {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        onClick={() => handleDeleteDocument(doc.id)}
+                                                        onClick={() => setDocToDelete(doc.id)}
                                                     >
                                                         <Trash2 className="h-4 w-4 text-red-500" />
                                                     </Button>
@@ -272,6 +430,16 @@ export default function OpportunityDetailPage() {
                                     </CardContent>
                                 </Card>
                             )}
+
+                            {/* Delete Document Dialog */}
+                            <DeleteConfirmDialog
+                                isOpen={!!docToDelete}
+                                onClose={() => setDocToDelete(null)}
+                                onConfirm={confirmDeleteDocument}
+                                title="Delete Document"
+                                description="Are you sure you want to delete this document? This will remove all extracted requirements and cannot be undone."
+                                isDeleting={isDeletingDoc}
+                            />
 
                             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                                 {/* Summary Cards */}
@@ -361,8 +529,12 @@ export default function OpportunityDetailPage() {
                 <TabsContent value="documents">
                     {/* Simple list of uploaded files */}
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>Opportunity Documents</CardTitle>
+                            <Button size="sm" onClick={() => setIsUploadDialogOpen(true)}>
+                                <Upload className="mr-2 h-4 w-4" />
+                                Upload Documents
+                            </Button>
                         </CardHeader>
                         <CardContent>
                             {documents.length === 0 ? (
@@ -387,6 +559,133 @@ export default function OpportunityDetailPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {/* Upload Dialog */}
+            <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Upload Opportunity Documents</DialogTitle>
+                        <DialogDescription>
+                            Upload PWS, RFP, Amendments, or other supporting files.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="file">Files</Label>
+                            <div
+                                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${dragActive
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50'
+                                    }`}
+                                onDragEnter={handleDrag}
+                                onDragLeave={handleDrag}
+                                onDragOver={handleDrag}
+                                onDrop={handleDrop}
+                                onClick={() => document.getElementById("opp-file-upload")?.click()}
+                            >
+                                <Input
+                                    id="opp-file-upload"
+                                    type="file"
+                                    multiple
+                                    accept=".pdf,.docx,.doc,.txt"
+                                    onChange={handleFileSelect}
+                                    className="hidden"
+                                />
+                                <Upload className={`mx-auto h-8 w-8 mb-2 ${dragActive ? "text-blue-500" : "text-slate-400"}`} />
+                                <div className="text-sm font-medium text-slate-700">
+                                    Click to upload or drag and drop
+                                </div>
+                                <div className="text-xs text-slate-500 mt-1">
+                                    PDF, DOCX, TXT (Max 50MB)
+                                </div>
+                            </div>
+                        </div>
+
+                        {selectedFiles.length > 0 && (
+                            <div className="bg-slate-50 rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
+                                <div className="text-xs font-semibold text-gray-500 mb-2">
+                                    Selected Files ({selectedFiles.length})
+                                </div>
+                                {selectedFiles.map((file, idx) => (
+                                    <div key={idx} className="flex items-center justify-between text-sm bg-white p-2 rounded border shadow-sm">
+                                        <div className="flex items-center gap-2 truncate">
+                                            <FileText className="h-3 w-3 text-blue-500" />
+                                            <span className="truncate max-w-[200px] text-slate-700">{file.name}</span>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedFiles(prev => prev.filter((_, i) => i !== idx));
+                                            }}
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="type">Default Document Type</Label>
+                            <Select value={uploadDocType} onValueChange={setUploadDocType}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="pws">Performance Work Statement (PWS)</SelectItem>
+                                    <SelectItem value="rfp">Request for Proposal (RFP)</SelectItem>
+                                    <SelectItem value="amendment">Amendment</SelectItem>
+                                    <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p className="text-[10px] text-muted-foreground">
+                                We will attempt to auto-detect type from filenames (e.g. "amend", "PWS").
+                            </p>
+                        </div>
+
+                        {uploading && (
+                            <div className="grid gap-2">
+                                <div className="flex justify-between text-xs">
+                                    <span>Uploading...</span>
+                                    <span>{Math.round(uploadProgress)}%</span>
+                                </div>
+                                <Progress value={uploadProgress} />
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)} disabled={uploading}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleBatchUpload} disabled={selectedFiles.length === 0 || uploading}>
+                            {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Upload {selectedFiles.length > 0 && !uploading && `(${selectedFiles.length})`}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <DeleteConfirmDialog
+                isOpen={!!docToDelete}
+                onClose={() => setDocToDelete(null)}
+                onConfirm={confirmDeleteDocument}
+                title="Delete Document"
+                description="Are you sure you want to delete this document? This will remove all extracted requirements and cannot be undone."
+                isDeleting={isDeletingDoc}
+            />
+
+            <MessageDialog
+                isOpen={messageOpen}
+                onClose={() => setMessageOpen(false)}
+                title={messageData.title}
+                description={messageData.description}
+                variant={messageData.variant}
+            />
         </div>
     );
 }
@@ -431,7 +730,7 @@ function AnalysisWizard({ opportunityId, requirements }: { opportunityId: string
             const res = await api.post("/api/analyses/", {
                 opportunity_id: opportunityId,
                 document_ids: selectedDocs,
-            }, { timeout: 90000 }); // 90s timeout
+            }, { timeout: 300000 }); // 5 minute timeout for long analyses
 
             // Redirect to analysis results
             router.push(`/opportunities/${opportunityId}/analysis/${res.data.id}`);
@@ -447,6 +746,14 @@ function AnalysisWizard({ opportunityId, requirements }: { opportunityId: string
         setSelectedDocs(prev =>
             prev.includes(docId) ? prev.filter(id => id !== docId) : [...prev, docId]
         );
+    };
+
+    const toggleAll = () => {
+        if (selectedDocs.length === ppDocuments.length) {
+            setSelectedDocs([]); // Deselect all
+        } else {
+            setSelectedDocs(ppDocuments.map(d => d.id)); // Select all
+        }
     };
 
     if (requirements.length === 0) {
@@ -476,7 +783,19 @@ function AnalysisWizard({ opportunityId, requirements }: { opportunityId: string
                     </div>
                 ) : (
                     <div className="space-y-2">
-                        <div className="text-sm font-medium mb-2">Select Documents ({selectedDocs.length} selected)</div>
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="text-sm font-medium">Select Documents ({selectedDocs.length})</div>
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    id="select-all"
+                                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    checked={ppDocuments.length > 0 && selectedDocs.length === ppDocuments.length}
+                                    onChange={toggleAll}
+                                />
+                                <label htmlFor="select-all" className="text-sm text-slate-600 cursor-pointer select-none">Select All</label>
+                            </div>
+                        </div>
                         {ppDocuments.map((doc) => (
                             <div
                                 key={doc.id}
@@ -488,7 +807,8 @@ function AnalysisWizard({ opportunityId, requirements }: { opportunityId: string
                                     type="checkbox"
                                     checked={selectedDocs.includes(doc.id)}
                                     onChange={() => toggleDoc(doc.id)}
-                                    className="h-4 w-4"
+                                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                    onClick={(e) => e.stopPropagation()}
                                 />
                                 <div className="flex-1">
                                     <div className="font-medium text-sm">{doc.contract_title || doc.filename}</div>
@@ -500,22 +820,47 @@ function AnalysisWizard({ opportunityId, requirements }: { opportunityId: string
                         ))}
                     </div>
                 )}
-
-                <Button
-                    onClick={handleRunAnalysis}
-                    disabled={analyzing || selectedDocs.length === 0}
-                    className="w-full"
-                >
-                    {analyzing ? (
-                        <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Analyzing... This may take 30-60 seconds
-                        </>
-                    ) : (
-                        "Run Analysis"
-                    )}
-                </Button>
             </CardContent>
+            <CardFooter>
+                <div className="flex justify-end w-full">
+                    <Button onClick={handleRunAnalysis} disabled={analyzing || selectedDocs.length === 0} className="w-full sm:w-auto">
+                        {analyzing ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Starting...
+                            </>
+                        ) : (
+                            "Run Gap Analysis"
+                        )}
+                    </Button>
+                </div>
+            </CardFooter>
+
+            {/* Analysis Progress Modal */}
+            <Dialog open={analyzing} onOpenChange={() => { }}>
+                <DialogContent className="sm:max-w-md [&>button]:hidden">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                            Analyzing Opportunity...
+                        </DialogTitle>
+                        <DialogDescription className="space-y-4 pt-4" asChild>
+                            <div className="space-y-4 pt-4 text-sm text-muted-foreground">
+                                <p className="text-gray-700 font-medium">
+                                    This process typically takes 30-60 seconds.
+                                </p>
+                                <div className="bg-amber-50 text-amber-800 p-3 rounded-md text-sm border border-amber-200">
+                                    ⚠️ Please do not refresh the page or navigate away.
+                                </div>
+                                <Progress value={undefined} className="h-2 w-full animate-pulse" />
+                                <p className="text-xs text-muted-foreground text-center">
+                                    Analyzing {selectedDocs.length} documents against {requirements.length} requirements...
+                                </p>
+                            </div>
+                        </DialogDescription>
+                    </DialogHeader>
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 }

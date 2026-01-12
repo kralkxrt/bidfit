@@ -7,6 +7,7 @@ import { FileText, ArrowRight, Trash2 } from "lucide-react";
 import { useCompanyStore } from "@/store/useCompanyStore";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import {
     Card,
     CardContent,
@@ -43,6 +44,8 @@ export default function AnalysesPage() {
     const { selectedCompanyId } = useCompanyStore();
     const [analyses, setAnalyses] = useState<AnalysisWithOpportunity[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (selectedCompanyId) {
@@ -111,15 +114,17 @@ export default function AnalysesPage() {
         return <Badge className="bg-red-600">NO-GO</Badge>;
     };
 
-    const handleDelete = async (e: React.MouseEvent, id: string) => {
-        e.stopPropagation(); // Prevent row click
-        if (!confirm("Are you sure you want to delete this analysis?")) return;
-
+    const confirmDelete = async () => {
+        if (!deleteId) return;
+        setIsDeleting(true);
         try {
-            await api.delete(`/api/analyses/${id}`);
-            setAnalyses(prev => prev.filter(a => a.id !== id));
+            await api.delete(`/api/analyses/${deleteId}`);
+            setAnalyses(prev => prev.filter(a => a.id !== deleteId));
+            setDeleteId(null);
         } catch (error) {
             console.error("Failed to delete analysis", error);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -202,7 +207,10 @@ export default function AnalysesPage() {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="text-gray-400 hover:text-red-600 hover:bg-red-50"
-                                                    onClick={(e) => handleDelete(e, analysis.id)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setDeleteId(analysis.id);
+                                                    }}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
@@ -215,6 +223,15 @@ export default function AnalysesPage() {
                     )}
                 </CardContent>
             </Card>
+
+            <DeleteConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={confirmDelete}
+                title="Delete Analysis"
+                description="Are you sure you want to delete this analysis? This action cannot be undone."
+                isDeleting={isDeleting}
+            />
         </div>
     );
 }

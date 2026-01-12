@@ -43,6 +43,7 @@ async def upload_document(
     content = await file.read()
     
     try:
+        print(f"Starting processing for file: {file.filename}, size: {len(content)} bytes")
         document = await processor.process_document(
             db=db,
             file_content=content,
@@ -51,9 +52,12 @@ async def upload_document(
             document_type=document_type,
             user_id=current_user.id
         )
+        print(f"Successfully processed file: {file.filename}")
         return document
     except Exception as e:
-        print(f"Upload failed: {e}")
+        print(f"Upload failed for {file.filename}: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 @router.delete("/{id}")

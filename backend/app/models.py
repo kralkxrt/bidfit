@@ -287,6 +287,7 @@ class Analysis(Base):
     
     # Phase 0 Integration
     company_compliance = Column(JSONB, nullable=True)       # {qualification_status, compliance_flags, disqualifiers}
+    document_analysis = Column(JSONB, nullable=True)        # Stores RFP detection & section analysis
     
     analysis_notes = Column(Text, nullable=True)
     user_notes = Column(Text, nullable=True)

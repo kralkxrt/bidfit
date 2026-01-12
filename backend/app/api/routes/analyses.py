@@ -56,6 +56,7 @@ class AnalysisDetailResponse(AnalysisResponse):
     
     # Phase 0 Integration
     company_compliance: Optional[Dict[str, Any]]
+    document_analysis: Optional[Dict[str, Any]]
     
     raw_llm_response: Optional[str]
 
@@ -115,9 +116,13 @@ async def run_analysis(
         return analysis
 
     except ValueError as e:
+        print(f"ValueError in analysis: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         import traceback
+        print(f"Unexpected error in analysis: {str(e)}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 

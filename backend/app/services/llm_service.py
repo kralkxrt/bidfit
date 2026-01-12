@@ -41,25 +41,61 @@ class LLMService:
         Extract SOW/PWS requirements using Prompt 4.
         """
         prompt = f"""
-Extract and structure the requirements from this government solicitation document (SOW/PWS).
+Extract and structure the requirements from this government solicitation document.
 
 ## DOCUMENT TEXT
 {document_text[:50000]} 
 
 ## EXTRACTION REQUIREMENTS
 
-Identify and extract all specific requirements the contractor must meet. Focus on:
+**CRITICAL: Extract from ALL relevant sections of the RFP/Solicitation:**
 
-1. **Technical Requirements**: What work must be performed
-2. **Personnel Requirements**: Qualifications, certifications, clearances
-3. **Deliverable Requirements**: What must be produced/delivered
-4. **Performance Requirements**: Standards, SLAs, metrics
-5. **Management Requirements**: Reporting, meetings, processes
-6. **Facility Requirements**: Location, space, equipment
-7. **Compliance Requirements**: Regulations, standards, certifications
+### Section C (Description/SOW/PWS) - MOST IMPORTANT
+Extract technical requirements: scope of work, tasks, deliverables, performance standards.
+Example IDs: C.1, C.2.1, C.3.a
+
+### Section E (Inspection & Acceptance)
+Extract quality assurance requirements, inspection criteria, acceptance standards.
+Example IDs: E.1, E.2
+
+### Section F (Deliverables)
+Extract deliverable descriptions, schedules, formats.
+Example IDs: F.1, F.2
+
+### Section H (Special Contract Requirements)
+Extract clearance requirements, certifications, special clauses.
+Example IDs: H.1, H-3, H.10
+
+### Section L (Instructions to Offerors)
+Extract submission requirements, format rules, evaluation demonstration requirements.
+Example IDs: L.5.1, L.5.a
+
+### Section M (Evaluation Criteria)
+Extract evaluation factors, weighting, scoring criteria.
+Example IDs: M.1, M.3.1
+
+**YOU MUST EXTRACT 25-50 REQUIREMENTS across ALL sections, not just Section L.**
+**Prioritize Section C (technical requirements) as this is most relevant for gap analysis.**
+
+---
+
+Categorize each requirement by type:
+
+1. **Technical Requirements**: What work must be performed (mostly Section C)
+2. **Personnel Requirements**: Qualifications, certifications, clearances (Sections C, H)
+3. **Deliverable Requirements**: What must be produced/delivered (Sections C, F)
+4. **Performance Requirements**: Standards, SLAs, metrics (Sections C, E)
+5. **Management Requirements**: Reporting, meetings, processes (Section C)
+6. **Facility Requirements**: Location, space, equipment (Section C)
+7. **Compliance Requirements**: Regulations, standards, certifications (Sections H, L)
 
 For each requirement:
-- Assign a unique ID based on document section (e.g., "PWS-3.1.2")
+- **ID Format**: Use the EXACT section number from the document (e.g., "C.1.2", "4.1.3", "H-3"). DO NOT use generic prefixes like "SOW-" unless the document uses them.
+- **CRITICAL - UNIQUE IDs**: If multiple requirements come from the same section (e.g., multiple items under C.1), use sub-numbering:
+  - C.1.1 - First requirement from C.1
+  - C.1.2 - Second requirement from C.1
+  - C.1.3 - Third requirement from C.1
+  Do NOT create duplicate IDs. Each requirement MUST have a unique ID.
 - Extract the exact requirement text
 - Categorize by type
 - Assess criticality (Critical, Important, Standard)
@@ -96,6 +132,22 @@ Return a JSON object:
 }}
 ```
 """
+        # Debug: Print document info
+        print(f"\n{'='*60}")
+        print(f"DEBUG EXTRACT_REQUIREMENTS:")
+        print(f"Document text length: {len(document_text)} chars")
+        print(f"Truncated to: {min(len(document_text), 50000)} chars")
+        print(f"\nFirst 2000 chars of document:")
+        print(document_text[:2000])
+        print(f"\n--- Checking for Section indicators ---")
+        for section in ['SECTION C', 'Section C', 'PART C', 'C.1', 'C.2', 'SECTION L', 'L.5']:
+            if section in document_text:
+                idx = document_text.find(section)
+                print(f"  Found '{section}' at position {idx}")
+            else:
+                print(f"  NOT FOUND: '{section}'")
+        print(f"{'='*60}\n")
+        
         try:
             response = await self.client.messages.create(
                 model=self.model,
@@ -105,7 +157,9 @@ Return a JSON object:
                     {"role": "user", "content": prompt}
                 ]
             )
-            return self._parse_json(response.content[0].text)
+            result = self._parse_json(response.content[0].text)
+            print(f"DEBUG: Extracted {len(result.get('requirements', []))} requirements")
+            return result
         except Exception as e:
              print(f"Requirement Extraction failed: {e}")
              return {"error": str(e)}

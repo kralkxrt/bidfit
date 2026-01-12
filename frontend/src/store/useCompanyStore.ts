@@ -56,6 +56,10 @@ interface CompanyState {
     removeCompany: (id: string) => Promise<void>;
     selectCompany: (id: string) => void;
     getSelectedCompany: () => Company | undefined;
+
+    // Hydration
+    _hasHydrated: boolean;
+    setHasHydrated: (state: boolean) => void;
 }
 
 export const useCompanyStore = create<CompanyState>()(
@@ -65,6 +69,13 @@ export const useCompanyStore = create<CompanyState>()(
             selectedCompanyId: null,
             isLoading: false,
             error: null,
+            _hasHydrated: false,
+
+            setHasHydrated: (state) => {
+                set({
+                    _hasHydrated: state
+                });
+            },
 
             fetchCompanies: async () => {
                 set({ isLoading: true, error: null });
@@ -181,6 +192,11 @@ export const useCompanyStore = create<CompanyState>()(
         {
             name: 'pp-gap-analysis-company-store',
             partialize: (state) => ({ selectedCompanyId: state.selectedCompanyId }), // Only persist selection
+            onRehydrateStorage: () => (state) => {
+                if (state) {
+                    state.setHasHydrated(true);
+                }
+            }
         }
     )
 );

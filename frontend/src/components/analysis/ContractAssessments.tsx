@@ -113,6 +113,41 @@ export function ContractAssessments({ contracts }: ContractAssessmentsProps) {
                                 </p>
                             </div>
 
+                            {/* CPARS Ratings Section */}
+                            {ca.performance_ratings && Object.keys(ca.performance_ratings).length > 0 && (
+                                <div>
+                                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">CPARS Performance Ratings</h4>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {Object.entries(ca.performance_ratings).map(([element, rating]) => {
+                                            const ratingStr = rating as string;
+                                            const isMarginal = ratingStr === 'Marginal' || ratingStr === 'Unsatisfactory';
+                                            const isExceptional = ratingStr === 'Exceptional' || ratingStr === 'Very Good';
+                                            return (
+                                                <div
+                                                    key={element}
+                                                    className={cn(
+                                                        "flex justify-between items-center p-2 rounded-md text-xs border",
+                                                        isMarginal ? "bg-red-50 border-red-200" :
+                                                            isExceptional ? "bg-green-50 border-green-200" :
+                                                                "bg-gray-50 border-gray-200"
+                                                    )}
+                                                >
+                                                    <span className="font-medium text-gray-600">{element}:</span>
+                                                    <span className={cn(
+                                                        "font-bold",
+                                                        isMarginal ? "text-red-700" :
+                                                            isExceptional ? "text-green-700" :
+                                                                "text-gray-700"
+                                                    )}>
+                                                        {ratingStr}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
                             {ca.limitations && ca.limitations.length > 0 && (
                                 <div>
                                     <h4 className="text-xs font-bold text-red-300 uppercase tracking-widest mb-2 flex items-center gap-1">

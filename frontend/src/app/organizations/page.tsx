@@ -33,6 +33,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { DeleteConfirmDialog } from '@/components/ui/DeleteConfirmDialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
@@ -236,26 +237,15 @@ export default function OrganizationsPage() {
             />
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete Organization</DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to delete this organization? This action cannot be undone and will remove all associated data.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
-                        <Button
-                            variant="destructive"
-                            onClick={confirmDelete}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? "Deleting..." : "Delete Organization"}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <DeleteConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={confirmDelete}
+                title="Delete Organization"
+                description="Are you sure you want to delete this organization? This action cannot be undone and will remove all associated data."
+                isDeleting={isSubmitting}
+                deleteButtonText="Delete Organization"
+            />
         </div>
     );
 }

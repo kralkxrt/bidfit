@@ -38,6 +38,7 @@ export interface ContractAssessment {
     primary_use: string;
     limitations: string[];
     is_padding: boolean;
+    performance_ratings?: Record<string, string>;
 }
 
 export interface RedFlag {
@@ -49,6 +50,7 @@ export interface Analysis {
     id: string;
     company_id: string;
     opportunity_id: string;
+    documents_analyzed: string[];
 
     overall_relevance_score: string;
     overall_relevance_label?: string;
@@ -93,6 +95,9 @@ export interface Analysis {
         }>;
     };
 
+    // Phase 0A
+    document_analysis?: DocumentAnalysis;
+
     // Legacy fields (optional)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     gap_matrix?: any;
@@ -102,4 +107,36 @@ export interface Analysis {
     recency_score?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     document_assessments?: any[];
+}
+
+export interface PPRequirements {
+    references_required?: number | { min: number; max?: number };
+    recency_years?: number;
+    min_contract_value?: number;
+    max_contract_value?: number; // Legacy field
+    contract_value?: { min: number; max?: number };
+    relevancy_criteria?: string;
+    cpars_requested?: boolean;
+    contract_types_preferred?: string[];
+}
+
+export interface EvaluationFactors {
+    past_performance_weight?: string;
+    scoring_approach?: string;
+    rating_scale?: string[];
+    key_criteria?: string[];
+}
+
+export interface ScopeOverview {
+    summary: string;
+    key_objectives: string[];
+}
+
+export interface DocumentAnalysis {
+    document_type: 'RFP' | 'PWS' | 'SOW' | 'RFI' | 'SOURCES_SOUGHT';
+    sections_identified: string[];
+    scope_overview?: ScopeOverview;
+    pp_requirements: PPRequirements;
+    evaluation_factors: EvaluationFactors;
+    special_requirements?: Record<string, string>;
 }

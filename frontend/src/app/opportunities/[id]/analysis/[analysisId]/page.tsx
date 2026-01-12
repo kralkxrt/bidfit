@@ -15,8 +15,10 @@ import { EvaluatorPerspective } from "@/components/analysis/EvaluatorPerspective
 import { ContractAssessments } from "@/components/analysis/ContractAssessments";
 import { DimensionalScores } from "@/components/analysis/DimensionalScores";
 import { CompanyComplianceCard } from "@/components/analysis/CompanyComplianceCard";
+import { DocumentAnalysisCard } from "@/components/analysis/DocumentAnalysisCard";
 import { Analysis } from "@/types/analysis";
 import { cn } from "@/lib/utils";
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 
 export default function AnalysisResultsPage() {
     const params = useParams();
@@ -27,6 +29,8 @@ export default function AnalysisResultsPage() {
     const [analysis, setAnalysis] = useState<Analysis | null>(null);
     const [opportunity, setOpportunity] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (analysisId) {
@@ -48,6 +52,17 @@ export default function AnalysisResultsPage() {
             console.error("Failed to fetch data", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const confirmDelete = async () => {
+        setIsDeleting(true);
+        try {
+            await api.delete(`/api/analyses/${analysisId}`);
+            router.push(`/opportunities/${opportunityId}`);
+        } catch (error) {
+            console.error("Failed to delete analysis", error);
+            setIsDeleting(false);
         }
     };
 
@@ -248,12 +263,7 @@ export default function AnalysisResultsPage() {
                                 variant="destructive"
                                 size="icon"
                                 className="bg-red-500 hover:bg-red-600 border-red-600 text-white rounded-lg opacity-80 hover:opacity-100 transition-opacity"
-                                onClick={async () => {
-                                    if (confirm("Are you sure you want to delete this analysis permanently?")) {
-                                        await api.delete(`/api/analyses/${analysisId}`);
-                                        router.push(`/opportunities/${opportunityId}`);
-                                    }
-                                }}
+                                onClick={() => setDeleteConfirmOpen(true)}
                             >
                                 <Trash2 className="w-4 h-4" />
                             </Button>
@@ -301,6 +311,19 @@ export default function AnalysisResultsPage() {
             {
                 analysis.company_compliance && (
                     <CompanyComplianceCard compliance={analysis.company_compliance} />
+                )
+            }
+
+            {/* RFP Document Analysis (Phase 0A) */}
+            {
+                analysis.document_analysis && (
+                    <DocumentAnalysisCard
+                        documentAnalysis={analysis.document_analysis}
+                        // TODO: Calculate these from `analysis.contract_assessments` or `analysis.document_assessments`
+                        submittedReferences={analysis.documents_analyzed?.length || 0}
+                    // oldestReferenceYear={...} 
+                    // largestContractValue={...}
+                    />
                 )
             }
 
@@ -432,6 +455,14 @@ export default function AnalysisResultsPage() {
                     </div>
                 </TabsContent>
             </Tabs>
+            <DeleteConfirmDialog
+                isOpen={deleteConfirmOpen}
+                onClose={() => setDeleteConfirmOpen(false)}
+                onConfirm={confirmDelete}
+                title="Delete Analysis"
+                description="Are you sure you want to delete this analysis permanently? This action cannot be undone."
+                isDeleting={isDeleting}
+            />
         </div >
     );
 }

@@ -480,3 +480,70 @@ async def delete_opportunity(
     await db.delete(opp)
     await db.commit()
     return None
+
+@router.post("/{id}/rescan", response_model=OpportunityResponse)
+async def rescan_requirements(
+    id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    processor: DocumentProcessor = Depends(get_document_processor)
+):
+    """
+    Re-scan the latest PWS/SOW/RFP document to update requirements.
+    Useful if LLM extraction failed or needs a refresh.
+    """
+    
+    # Check opportunity
+    query = select(Opportunity).where(Opportunity.id == id)
+    result = await db.execute(query)
+    opp = result.scalars().first()
+    
+    if not opp:
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+        
+    # Find latest relevant document
+    # We prioritize PWS, then SOW, then RFP, then everything else
+    # Actually, let's just grab the latest 'pws', 'sow', 'rfp' or 'amendment'?
+    # Usually users want to rescan the main requirements doc.
+    
+    doc_query = (
+        select(OpportunityDocument)
+        .where(
+            OpportunityDocument.opportunity_id == id,
+            OpportunityDocument.document_type.in_(['pws', 'sow', 'rfp', 'solicitation'])
+        )
+        .order_by(desc(OpportunityDocument.created_at))
+        .limit(1)
+    )
+    
+    doc_res = await db.execute(doc_query)
+    doc = doc_res.scalars().first()
+    
+    if not doc:
+        # Fallback to ANY document if no explicit PWS found (e.g. user just uploaded 'amendment')
+        fallback_query = (
+            select(OpportunityDocument)
+            .where(OpportunityDocument.opportunity_id == id)
+            .order_by(desc(OpportunityDocument.created_at))
+            .limit(1)
+        )
+        fallback_res = await db.execute(fallback_query)
+        doc = fallback_res.scalars().first()
+        
+    if not doc:
+        raise HTTPException(status_code=404, detail="No documents found to scan")
+        
+    try:
+        # Reprocess
+        await processor.reprocess_requirements(db, doc)
+        
+        # Refresh opportunity to return (though requirements are on the doc, the frontend might reload)
+        # We assume frontend triggers a reload or we return the updated opp?
+        # The frontend uses `fetchOpportunity` which hits `GET /opportunities/{id}`.
+        # Returning opp here is fine.
+        return opp
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Rescan failed: {str(e)}")

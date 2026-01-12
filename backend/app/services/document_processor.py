@@ -145,23 +145,53 @@ class DocumentProcessor:
         
         return doc
 
+    async def reprocess_requirements(
+        self,
+        db: AsyncSession,
+        document: OpportunityDocument
+    ) -> OpportunityDocument:
+        """
+        Re-run requirement extraction on an existing document using stored raw_text.
+        """
+        if not document.raw_text:
+            raise ValueError("Document has no raw text to process")
+            
+        # Extract Requirements using LLM
+        parsed_requirements = await self.llm.extract_requirements(document.raw_text)
+        
+        # Update record
+        document.parsed_requirements = parsed_requirements
+        document.processed_at = datetime.utcnow()
+        document.processing_status = "completed"
+        
+        db.add(document)
+        await db.commit()
+        await db.refresh(document)
+        
+        return document
+
     
     def _extract_text(self, file_content: bytes, mime_type: str) -> str:
         """Extract plain text from document based on mime type."""
         
+        text = ""
         if mime_type == "application/pdf":
-            return self._extract_pdf_text(file_content)
+            text = self._extract_pdf_text(file_content)
         elif mime_type in [
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "application/msword"
         ]:
-            return self._extract_docx_text(file_content)
+            text = self._extract_docx_text(file_content)
         elif mime_type == "text/plain":
-            return file_content.decode("utf-8", errors='ignore')
-        else:
-            # Fallback for unsupported types, or raise error?
-            # For now, empty string
+            text = file_content.decode("utf-8", errors='ignore')
+        
+        return self._clean_text(text)
+
+    def _clean_text(self, text: str) -> str:
+        """Remove null bytes and other postgres-breaking characters."""
+        if not text:
             return ""
+        return text.replace("\x00", "")
     
     def _extract_pdf_text(self, file_content: bytes) -> str:
         """Extract text from PDF file."""
@@ -209,17 +239,96 @@ class DocumentProcessor:
         FIELDS TO EXTRACT:
         - contract_number (string)
         - contract_title (string)
-        - customer_agency (string)
-        - customer_command (string)
-        - contract_value (number or string)
+        - customer_agency (string - e.g., "Department of Veterans Affairs", "US Coast Guard")
+        - customer_command (string - specific command/facility)
+        - contract_value (number or string with $ amount)
         - pop_start (YYYY-MM-DD or null)
         - pop_end (YYYY-MM-DD or null)
         - naics_code (string)
         - clearance_level (string)
         - fte_count (number or null)
         - geographic_scope (string)
-        - scope_summary (string - 2-3 sentences)
+        - scope_summary (string - 2-3 sentences describing the work)
         - key_capabilities (array of strings)
+        - performance_ratings (CRITICAL - see below)
+        - locations (array of strings)
+        
+        ## CRITICAL: CPARS / Performance Evaluation Extraction
+        
+        **CPARS documents contain a ratings table. You MUST extract ratings if present.**
+        
+        The table often loses formatting in PDF extraction and may look like "messy" text lines.
+        LOOK FOR THESE PATTERNS:
+        1. "Quality: Very Good" or "Quality.....Very Good"
+        2. "Quality N/A Very Good" (The "N/A" is typical for "Past Rating")
+        3. "QUALITY OF PRODUCT... Very Good"
+        4. "Schedule . . . . . Satisfactory"
+        
+        **MANDATORY FIELDS TO HUNT FOR:**
+        - Quality (of Product/Service)
+        - Schedule (Timeliness)
+        - Cost Control
+        - Management (Business Relations)
+        - Small Business (Subcontracting)
+        - Regulatory Compliance
+        
+        Ratings are usually: "Exceptional", "Very Good", "Satisfactory", "Marginal", "Unsatisfactory".
+        
+        **REQUIRED: Extract into performance_ratings field as:**
+        ```json
+        {
+          "Quality": "Very Good",
+          "Schedule": "Satisfactory", 
+          "Management": "Exceptional",
+          "Small_Business": "Marginal",
+          "Recommendation": "Would recommend" 
+        }
+        ```
+        If a rating is "Marginal" or "Unsatisfactory", you MUST include it.
+        
+        ## CRITICAL: DOCUMENT CLASSIFICATION
+        Analyze the document content to determine its true nature.
+        - **CONTRACT_CPARS**: A formal contract, task order, or CPARS evaluation.
+        - **NARRATIVE**: A capability statement, marketing slick, or general company overview (no specific contract #).
+        - **SOLICITATION**: An RFP, PWS, or SOW (the requirements document).
+        
+        Return field: "actual_document_type": "CONTRACT_CPARS" | "NARRATIVE" | "SOLICITATION"
+        
+        ## JSON OUTPUT FORMAT:
+        {{
+            "contract_number": "...",
+            "contract_title": "...",
+            "actual_document_type": "CONTRACT_CPARS", 
+            ...
+            "performance_ratings": {{
+                "Quality": "Very Good",
+                "Schedule": "Satisfactory", 
+                "Management": "Exceptional",
+                "Small Business Subcontracting": "Marginal",
+                "Regulatory Compliance": "Satisfactory"
+            }}
+        }}
+        ```
+        
+        **Rating values are one of:** Exceptional, Very Good, Satisfactory, Marginal, Unsatisfactory, N/A
+        
+        **If ANY rating is "Marginal" or "Unsatisfactory", also include:**
+        ```json
+        {{
+          "negative_ratings": ["Small Business Subcontracting: Marginal"]
+        }}
+        ```
+        
+        **If contractor disputes are mentioned, include:**
+        ```json
+        {{
+          "contractor_disputes": "Contractor disputes Schedule rating..."
+        }}
+        ```
+        
+        If this is NOT a CPARS document, set performance_ratings to empty dict {{}}.
+        
+        Return ONLY the JSON object, no other text.
         """
         
         # Call LLM
