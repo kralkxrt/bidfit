@@ -27,6 +27,7 @@ if database_url:
         database_url,
         echo=settings.DEBUG,
         poolclass=NullPool,
+        json_deserializer=lambda x: x,  # Disable JSON codec setup to avoid prepared statement errors
         connect_args={
             "statement_cache_size": 0,  # CRITICAL: pgbouncer doesn't support prepared statements
             "command_timeout": 10,  # Prevent hanging connections
