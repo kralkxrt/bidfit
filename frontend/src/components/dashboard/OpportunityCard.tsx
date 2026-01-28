@@ -1,10 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-    Star, Calendar, DollarSign, AlertTriangle, CheckCircle,
-    MoreHorizontal, Eye, Download, Edit, EyeOff, Ban, Trash2,
-    ExternalLink
+    Star,
+    Calendar,
+    DollarSign,
+    AlertTriangle,
+    MoreHorizontal,
+    Edit,
+    EyeOff,
+    Ban,
+    ExternalLink,
 } from 'lucide-react';
 import { Opportunity } from '@/types/opportunity';
 import Link from 'next/link';
@@ -36,16 +42,18 @@ export function OpportunityCard({
         return 'bg-red-100 text-red-700 border-red-300';
     };
 
-    // Days until due
-    const getDaysUntilDue = () => {
-        if (!opportunity.response_due_date) return null;
+    // Avoid using `new Date()` during SSR render (timezone/clock differences can break hydration).
+    const [now, setNow] = useState<Date | null>(null);
+    useEffect(() => {
+        setNow(new Date());
+    }, []);
+
+    const daysUntilDue = useMemo(() => {
+        if (!opportunity.response_due_date || !now) return null;
         const due = new Date(opportunity.response_due_date);
-        const now = new Date();
         const diff = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         return diff;
-    };
-
-    const daysUntilDue = getDaysUntilDue();
+    }, [now, opportunity.response_due_date]);
     const isUrgent = daysUntilDue !== null && daysUntilDue <= 7;
     const isOverdue = daysUntilDue !== null && daysUntilDue < 0;
 
@@ -110,10 +118,12 @@ export function OpportunityCard({
                             }`}>
                             <Calendar className="w-3.5 h-3.5" />
                             <span>
-                                {new Date(opportunity.response_due_date).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric'
-                                })}
+                                {now
+                                    ? new Date(opportunity.response_due_date).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric'
+                                    })
+                                    : "—"}
                             </span>
                             {daysUntilDue !== null && (
                                 <span className={`ml-1 px-1.5 py-0.5 rounded text-xs ${isOverdue
@@ -285,7 +295,7 @@ function HideOpportunityModal({
                         Hide Opportunity
                     </h3>
                     <p className="text-sm text-gray-500 mb-4">
-                        "{opportunity.title}"
+                        “{opportunity.title}”
                     </p>
 
                     <div className="space-y-4">

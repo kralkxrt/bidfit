@@ -8,7 +8,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
 
 interface ComplianceFlag {
     field: string;
@@ -52,12 +51,15 @@ export function CompanyComplianceCard({ compliance }: CompanyComplianceCardProps
     };
 
     return (
-        <Card className={cn("border-l-4",
-            qualification_status === 'QUALIFIED' ? "border-l-green-500" :
-                qualification_status === 'DISQUALIFIED' ? "border-l-red-500" :
-                    "border-l-yellow-500"
-        )}>
-            <CardHeader className="pb-2">
+        <Card
+            className={cn(
+                "border-slate-200 shadow-sm border-l-4",
+                qualification_status === 'QUALIFIED' ? "border-l-green-500" :
+                    qualification_status === 'DISQUALIFIED' ? "border-l-red-500" :
+                        "border-l-yellow-500"
+            )}
+        >
+            <CardHeader className="p-5 pb-3">
                 <div className="flex justify-between items-center">
                     <CardTitle className="flex items-center gap-2 text-lg">
                         <ShieldAlert className="w-5 h-5" />
@@ -68,7 +70,7 @@ export function CompanyComplianceCard({ compliance }: CompanyComplianceCardProps
                     </Badge>
                 </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-5 pt-0 space-y-4">
 
                 {/* Disqualifiers Banner */}
                 {disqualifiers && disqualifiers.length > 0 && (

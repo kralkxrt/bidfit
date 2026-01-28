@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Construction } from "lucide-react";
+import { Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function SettingsPage() {
@@ -19,7 +19,7 @@ export default function SettingsPage() {
                 </div>
 
                 <p className="text-slate-500 text-lg leading-relaxed">
-                    We're building a powerful control center for your workspace. Soon you'll be able to manage:
+                    We&apos;re building a powerful control center for your workspace. Soon you&apos;ll be able to manage:
                 </p>
 
                 <div className="grid grid-cols-1 gap-2 text-left bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">

@@ -8,7 +8,6 @@ import {
     AlertTriangle,
     FileText
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { ContractAssessment } from "@/types/analysis";
 import { cn } from "@/lib/utils";
 

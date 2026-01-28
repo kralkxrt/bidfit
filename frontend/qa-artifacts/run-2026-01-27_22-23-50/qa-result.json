@@ -1,0 +1,95 @@
+{
+  "artifactsDir": "/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa-artifacts/run-2026-01-27_22-23-50",
+  "checks": [
+    {
+      "name": "Dashboard loads",
+      "status": "fail",
+      "error": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('heading', { name: /Good (morning|afternoon|evening)/ }) to be visible\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:50:83\n    at async check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:7)\n    at async run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:48:3)"
+    },
+    {
+      "name": "Org switcher can switch orgs and dashboard refreshes",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /Select Organization|Organization|Liberty Alliance|The Ginisis Group|Talion Construction/ })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:58:19\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:56:9)"
+    },
+    {
+      "name": "Opportunities list loads for current org",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('link', { name: 'Opportunities' })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:83:61\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:82:9)"
+    },
+    {
+      "name": "New Opportunity form loads, submit works, redirects to analyze",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('link', { name: /New Opportunity/i }).first()\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:91:72\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:90:9)"
+    },
+    {
+      "name": "Analyze page: tabs render and Roxy visible on all tabs",
+      "status": "fail",
+      "error": "Error: No created opportunity URL to validate\n    at file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:125:39\n    at check (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:124:9)"
+    },
+    {
+      "name": "Documents tab: shows uploaded PDF in tree (best-effort)",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('tab', { name: 'Documents' })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:146:56\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:145:9)"
+    },
+    {
+      "name": "Ask Roxy: thinking indicator + streamed response (best-effort)",
+      "status": "fail",
+      "error": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByPlaceholder('Ask Roxy...')\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:162:17\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:160:9)"
+    },
+    {
+      "name": "Citations appear and clicking a citation navigates to Documents (best-effort)",
+      "status": "fail",
+      "error": "Error: No sources button found (no citations returned)\n    at file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:199:13\n    at async check (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:39:7)\n    at async run (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:178:3)"
+    },
+    {
+      "name": "Past Performance: list loads and can add a new contract",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('link', { name: 'Past Performance' })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:204:64\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:203:9)"
+    },
+    {
+      "name": "Company Profile: loads, can edit and save",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('link', { name: 'Company Profile' })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:219:63\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:218:9)"
+    },
+    {
+      "name": "Sidebar collapse toggles and persists across reload",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Collapse sidebar' })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:249:20\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:246:9)"
+    }
+  ],
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:3000/_next/static/media/4473ecc91f70f139-s.p.woff was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "type": "warning",
+      "text": "The resource http://localhost:3000/_next/static/media/463dafcda517f24f-s.p.woff was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    }
+  ],
+  "pageErrors": []
+}

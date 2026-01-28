@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import uuid4
 import sqlalchemy
-from sqlalchemy import Column, String, Boolean, DateTime, Integer, Numeric, Text, ForeignKey, Date, JSON, ARRAY
+from sqlalchemy import Column, String, Boolean, DateTime, Integer, Numeric, Text, ForeignKey, Date, JSON, ARRAY, CheckConstraint, Float
 from sqlalchemy.orm import Relationship, Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY as PG_ARRAY
 from pgvector.sqlalchemy import Vector
@@ -101,6 +101,25 @@ class Company(Base):
     opportunities = relationship("Opportunity", back_populates="company", cascade="all, delete-orphan")
     analyses = relationship("Analysis", back_populates="company", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="company")
+    roxy_memories = relationship("RoxyMemory", back_populates="company", cascade="all, delete-orphan")
+
+class CompanyProfile(Base):
+    __tablename__ = "company_profiles"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    name = Column(Text, nullable=False)
+    naics_codes = Column(PG_ARRAY(String), nullable=True)
+    certifications = Column(PG_ARRAY(String), nullable=True)
+    clearances = Column(PG_ARRAY(String), nullable=True)
+    set_asides = Column(JSONB, default={})
+    employee_count = Column(Integer, nullable=True)
+    annual_revenue = Column(Numeric(15, 2), nullable=True)
+    bonding_capacity = Column(Numeric(15, 2), nullable=True)
+    cage_code = Column(String(50), nullable=True)
+    duns_number = Column(String(50), nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class UserCompany(Base):
     __tablename__ = "user_companies"
@@ -173,6 +192,7 @@ class Document(Base):
 
     # Relationships
     company = relationship("Company", back_populates="documents")
+    text_positions = relationship("DocumentTextPosition", back_populates="document", cascade="all, delete-orphan")
 
 class Opportunity(Base):
     __tablename__ = "opportunities"
@@ -224,6 +244,7 @@ class Opportunity(Base):
     company = relationship("Company", back_populates="opportunities")
     documents = relationship("OpportunityDocument", back_populates="opportunity", cascade="all, delete-orphan")
     analyses = relationship("Analysis", back_populates="opportunity", cascade="all, delete-orphan")
+    compliance_matrix_items = relationship("ComplianceMatrixItem", back_populates="opportunity", cascade="all, delete-orphan")
 
 class OpportunityDocument(Base):
     __tablename__ = "opportunity_documents"
@@ -250,6 +271,53 @@ class OpportunityDocument(Base):
 
     # Relationships
     opportunity = relationship("Opportunity", back_populates="documents")
+    text_positions = relationship("OpportunityDocumentTextPosition", back_populates="opportunity_document", cascade="all, delete-orphan")
+
+class DocumentTextPosition(Base):
+    __tablename__ = "document_text_positions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    page_number = Column(Integer, nullable=False, index=True)
+    text_content = Column(Text, nullable=False)
+    bounding_box = Column(JSONB, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    document = relationship("Document", back_populates="text_positions")
+
+class OpportunityDocumentTextPosition(Base):
+    __tablename__ = "opportunity_document_text_positions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    opportunity_document_id = Column(UUID(as_uuid=True), ForeignKey("opportunity_documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    page_number = Column(Integer, nullable=False, index=True)
+    text_content = Column(Text, nullable=False)
+    bounding_box = Column(JSONB, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    opportunity_document = relationship("OpportunityDocument", back_populates="text_positions")
+
+
+class ComplianceMatrixItem(Base):
+    __tablename__ = "compliance_matrix_items"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    opportunity_id = Column(UUID(as_uuid=True), ForeignKey("opportunities.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    section = Column(String(50), nullable=False)  # e.g. "L.5.1", "M.2.1"
+    requirement = Column(Text, nullable=False)
+    source_document = Column(String(255), nullable=True)
+    page_number = Column(Integer, nullable=True)
+
+    response_status = Column(String(20), nullable=False, default="not_started")
+    notes = Column(Text, nullable=True)
+    assigned_to = Column(String(100), nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    opportunity = relationship("Opportunity", back_populates="compliance_matrix_items")
+
 
 class Analysis(Base):
     __tablename__ = "analyses"
@@ -305,6 +373,51 @@ class Analysis(Base):
     # Relationships
     company = relationship("Company", back_populates="analyses")
     opportunity = relationship("Opportunity", back_populates="analyses")
+
+class RoxySession(Base):
+    __tablename__ = "roxy_sessions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    opportunity_id = Column(UUID(as_uuid=True), ForeignKey("opportunities.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    opportunity = relationship("Opportunity")
+    messages = relationship("RoxyMessage", back_populates="session", cascade="all, delete-orphan")
+
+class RoxyMessage(Base):
+    __tablename__ = "roxy_messages"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    session_id = Column(UUID(as_uuid=True), ForeignKey("roxy_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = Column(String(20), nullable=False)
+    content = Column(Text, nullable=False)
+    citations = Column(JSONB, nullable=False, default=[])
+    tool_used = Column(String(100), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        CheckConstraint("role IN ('user', 'assistant')", name="ck_roxy_messages_role"),
+    )
+
+    # Relationships
+    session = relationship("RoxySession", back_populates="messages")
+
+class RoxyMemory(Base):
+    __tablename__ = "roxy_memories"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    memory_type = Column(Text, nullable=False)
+    content = Column(Text, nullable=False)
+    source = Column(Text, nullable=True)
+    confidence = Column(Float, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    company = relationship("Company", back_populates="roxy_memories")
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

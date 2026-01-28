@@ -3,8 +3,11 @@
 import React, { useState, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import {
-    Search, Filter, EyeOff, Plus, LayoutGrid, List, Calendar,
-    ChevronDown, X
+    Search,
+    Filter,
+    EyeOff,
+    Plus,
+    X,
 } from 'lucide-react';
 import { Opportunity, PipelineStage, PipelineSummary, OpportunityFilters } from '@/types/opportunity';
 import { OpportunityCard } from './OpportunityCard';
@@ -36,7 +39,7 @@ export function PipelineView({
     onHide,
     onRestore,
     onToggleFavorite,
-    onRefresh
+    onRefresh: _onRefresh,
 }: PipelineViewProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [showHidden, setShowHidden] = useState(false);
@@ -90,7 +93,8 @@ export function PipelineView({
         // Update stage
         const newStage = destination.droppableId as PipelineStage;
         await onStageChange(draggableId, newStage);
-    }, [onStageChange]);
+        _onRefresh();
+    }, [onStageChange, _onRefresh]);
 
     return (
         <div className="space-y-4">

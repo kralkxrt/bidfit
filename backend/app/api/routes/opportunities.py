@@ -9,9 +9,9 @@ from sqlalchemy import select, desc, or_, and_, func, text
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import User, Opportunity, OpportunityDocument, Company, Analysis
+from app.models import User, Opportunity, OpportunityDocument, Company, Analysis, Document
 from app.schemas import OpportunityCreate, OpportunityResponse, OpportunityDocumentResponse
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_org_id
 from app.services.storage_service import StorageService
 from app.services.document_processor import DocumentProcessor
 from app.services.llm_service import LLMService
@@ -27,9 +27,9 @@ def get_document_processor():
     return DocumentProcessor(llm_service=llm, storage_service=storage)
 
 
+@router.get("", response_model=List[OpportunityResponse])
 @router.get("/", response_model=List[OpportunityResponse])
 async def list_opportunities(
-    company_id: Optional[UUID] = None,
     # Filters
     stage: Optional[str] = Query(None, description="Pipeline stage filter"),
     is_hidden: bool = Query(False, description="Include hidden opportunities"),
@@ -43,10 +43,11 @@ async def list_opportunities(
     # Sorting
     sort_by: str = Query("response_due_date", description="Sort field"),
     sort_order: str = Query("asc", description="Sort order: asc or desc"),
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """List opportunities. If company_id provided, filter by company. Otherwise return all."""
+    """List opportunities filtered by org."""
     
     # Create subquery for latest analysis per opportunity
     latest_analysis_subq = (
@@ -68,8 +69,7 @@ async def list_opportunities(
         selectinload(Opportunity.company)
     )
     
-    if company_id:
-        query = query.where(Opportunity.company_id == company_id)
+    query = query.where(Opportunity.company_id == org_id)
 
     # Visibility filter
     if show_only_hidden:
@@ -155,23 +155,24 @@ async def list_opportunities(
     return opportunities
 
 
+@router.post("", response_model=OpportunityResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=OpportunityResponse, status_code=status.HTTP_201_CREATED)
 async def create_opportunity(
     opportunity: OpportunityCreate,
-    company_id: UUID,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new opportunity."""
     
     # Check if company exists
-    company_res = await db.execute(select(Company).where(Company.id == company_id))
+    company_res = await db.execute(select(Company).where(Company.id == org_id))
     if not company_res.scalars().first():
         raise HTTPException(status_code=404, detail="Company not found")
 
     new_opp = Opportunity(
         **opportunity.model_dump(),
-        company_id=company_id,
+        company_id=org_id,
         created_by=current_user.id
     )
     
@@ -183,7 +184,7 @@ async def create_opportunity(
 
 @router.get("/pipeline-summary")
 async def get_pipeline_summary(
-    company_id: UUID,
+    org_id: UUID = Depends(require_org_id),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -202,7 +203,7 @@ async def get_pipeline_summary(
         GROUP BY pipeline_stage
     """)
     
-    result = await db.execute(query, {"company_id": str(company_id)})
+    result = await db.execute(query, {"company_id": str(org_id)})
     rows = result.fetchall()
     
     # Initialize all stages
@@ -240,6 +241,7 @@ async def get_pipeline_summary(
 async def update_pipeline_stage(
     opportunity_id: UUID,
     body: dict = Body(...),  # {"stage": "writing"}
+    org_id: UUID = Depends(require_org_id),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -254,7 +256,12 @@ async def update_pipeline_stage(
             detail=f"Invalid stage. Must be one of: {', '.join(valid_stages)}"
         )
     
-    opportunity = await db.get(Opportunity, opportunity_id)
+    result = await db.execute(
+        select(Opportunity)
+        .where(Opportunity.id == opportunity_id)
+        .where(Opportunity.company_id == org_id)
+    )
+    opportunity = result.scalars().first()
     if not opportunity:
         raise HTTPException(status_code=404, detail="Opportunity not found")
     
@@ -276,12 +283,18 @@ async def update_pipeline_stage(
 async def hide_opportunity(
     opportunity_id: UUID,
     body: dict = Body(...),  # {"is_no_bid": false, "reason": "..."}
+    org_id: UUID = Depends(require_org_id),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Hide an opportunity from the pipeline view"""
     
-    opportunity = await db.get(Opportunity, opportunity_id)
+    result = await db.execute(
+        select(Opportunity)
+        .where(Opportunity.id == opportunity_id)
+        .where(Opportunity.company_id == org_id)
+    )
+    opportunity = result.scalars().first()
     if not opportunity:
         raise HTTPException(status_code=404, detail="Opportunity not found")
     
@@ -309,12 +322,18 @@ async def hide_opportunity(
 @router.patch("/{opportunity_id}/restore")
 async def restore_opportunity(
     opportunity_id: UUID,
+    org_id: UUID = Depends(require_org_id),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Restore a hidden opportunity back to the pipeline"""
     
-    opportunity = await db.get(Opportunity, opportunity_id)
+    result = await db.execute(
+        select(Opportunity)
+        .where(Opportunity.id == opportunity_id)
+        .where(Opportunity.company_id == org_id)
+    )
+    opportunity = result.scalars().first()
     if not opportunity:
         raise HTTPException(status_code=404, detail="Opportunity not found")
     
@@ -336,12 +355,18 @@ async def restore_opportunity(
 @router.patch("/{opportunity_id}/favorite")
 async def toggle_favorite(
     opportunity_id: UUID,
+    org_id: UUID = Depends(require_org_id),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Toggle favorite status of an opportunity"""
     
-    opportunity = await db.get(Opportunity, opportunity_id)
+    result = await db.execute(
+        select(Opportunity)
+        .where(Opportunity.id == opportunity_id)
+        .where(Opportunity.company_id == org_id)
+    )
+    opportunity = result.scalars().first()
     if not opportunity:
         raise HTTPException(status_code=404, detail="Opportunity not found")
     
@@ -357,11 +382,12 @@ async def toggle_favorite(
 @router.get("/{id}", response_model=OpportunityResponse)
 async def get_opportunity(
     id: UUID,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Get opportunity details."""
-    query = select(Opportunity).where(Opportunity.id == id)
+    query = select(Opportunity).where(Opportunity.id == id).where(Opportunity.company_id == org_id)
     result = await db.execute(query)
     opp = result.scalars().first()
     
@@ -389,11 +415,77 @@ async def get_opportunity(
         
     return opp
 
+
+@router.get("/{id}/quick-stats")
+async def get_opportunity_quick_stats(
+    id: UUID,
+    org_id: UUID = Depends(require_org_id),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Quick stats for dashboard cards.
+    """
+    opp_res = await db.execute(
+        select(Opportunity)
+        .where(Opportunity.id == id)
+        .where(Opportunity.company_id == org_id)
+    )
+    opp = opp_res.scalars().first()
+    if not opp:
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+
+    doc_count_res = await db.execute(
+        select(func.count())
+        .select_from(Document)
+        .where(Document.company_id == org_id)
+        .where(Document.deleted_at.is_(None))
+    )
+    attachment_count = int(doc_count_res.scalar() or 0)
+
+    opp_doc_count_res = await db.execute(
+        select(func.count())
+        .select_from(OpportunityDocument)
+        .where(OpportunityDocument.opportunity_id == id)
+    )
+    attachment_count += int(opp_doc_count_res.scalar() or 0)
+
+    analysis_res = await db.execute(
+        select(Analysis)
+        .where(Analysis.opportunity_id == id)
+        .order_by(desc(Analysis.created_at))
+        .limit(1)
+    )
+    analysis = analysis_res.scalars().first()
+
+    requirements_count = 0
+    gap_score = None
+    recommendation = None
+    if analysis:
+        reqs = analysis.requirements_matrix or []
+        if isinstance(reqs, list):
+            requirements_count = len(reqs)
+        gap_score = analysis.overall_relevance_score
+        recommendation = analysis.go_no_go_recommendation
+
+    days_until_due = None
+    if opp.response_due_date:
+        days_until_due = (opp.response_due_date - datetime.utcnow().date()).days
+
+    return {
+        "attachmentCount": attachment_count,
+        "requirementsCount": requirements_count,
+        "gapScore": gap_score,
+        "recommendation": recommendation,
+        "daysUntilDue": days_until_due
+    }
+
 @router.post("/{id}/documents", response_model=OpportunityDocumentResponse)
 async def upload_opportunity_document(
     id: UUID,
     file: UploadFile = File(...),
     document_type: str = Form("pws"), # pws, sow, etc.
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     processor: DocumentProcessor = Depends(get_document_processor)
@@ -401,7 +493,7 @@ async def upload_opportunity_document(
     """Upload and process an opportunity document (SOW/PWS)."""
     
     # Check opportunity
-    query = select(Opportunity).where(Opportunity.id == id)
+    query = select(Opportunity).where(Opportunity.id == id).where(Opportunity.company_id == org_id)
     result = await db.execute(query)
     opp = result.scalars().first()
     
@@ -429,11 +521,23 @@ async def upload_opportunity_document(
 @router.get("/{id}/documents", response_model=List[OpportunityDocumentResponse])
 async def list_opportunity_documents(
     id: UUID,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """List all documents for an opportunity (PWS, SOW, etc.)."""
-    query = select(OpportunityDocument).where(OpportunityDocument.opportunity_id == id).order_by(desc(OpportunityDocument.created_at))
+    opp_res = await db.execute(
+        select(Opportunity.id)
+        .where(Opportunity.id == id)
+        .where(Opportunity.company_id == org_id)
+    )
+    if not opp_res.scalars().first():
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+    query = (
+        select(OpportunityDocument)
+        .where(OpportunityDocument.opportunity_id == id)
+        .order_by(desc(OpportunityDocument.created_at))
+    )
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -441,11 +545,19 @@ async def list_opportunity_documents(
 async def delete_opportunity_document(
     opp_id: UUID,
     doc_id: UUID,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Delete an opportunity document (PWS/SOW/Amendment)."""
     
+    opp_res = await db.execute(
+        select(Opportunity.id)
+        .where(Opportunity.id == opp_id)
+        .where(Opportunity.company_id == org_id)
+    )
+    if not opp_res.scalars().first():
+        raise HTTPException(status_code=404, detail="Opportunity not found")
     query = select(OpportunityDocument).where(
         OpportunityDocument.id == doc_id,
         OpportunityDocument.opportunity_id == opp_id
@@ -466,12 +578,13 @@ async def delete_opportunity_document(
 @router.delete("/{id}", status_code=204)
 async def delete_opportunity(
     id: UUID,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Delete an opportunity."""
     
-    query = select(Opportunity).where(Opportunity.id == id)
+    query = select(Opportunity).where(Opportunity.id == id).where(Opportunity.company_id == org_id)
     result = await db.execute(query)
     opp = result.scalars().first()
     
@@ -488,6 +601,7 @@ class BulkDeleteRequest(BaseModel):
 @router.post("/bulk-delete")
 async def bulk_delete_opportunities(
     payload: BulkDeleteRequest,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -498,7 +612,7 @@ async def bulk_delete_opportunities(
         return {"message": "No IDs provided"}
         
     # Hard delete matches single delete behavior for opportunities
-    query = delete(Opportunity).where(Opportunity.id.in_(payload.ids))
+    query = delete(Opportunity).where(Opportunity.id.in_(payload.ids)).where(Opportunity.company_id == org_id)
     await db.execute(query)
     await db.commit()
     
@@ -507,6 +621,7 @@ async def bulk_delete_opportunities(
 @router.post("/{id}/rescan", response_model=OpportunityResponse)
 async def rescan_requirements(
     id: UUID,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     processor: DocumentProcessor = Depends(get_document_processor)
@@ -517,7 +632,7 @@ async def rescan_requirements(
     """
     
     # Check opportunity
-    query = select(Opportunity).where(Opportunity.id == id)
+    query = select(Opportunity).where(Opportunity.id == id).where(Opportunity.company_id == org_id)
     result = await db.execute(query)
     opp = result.scalars().first()
     

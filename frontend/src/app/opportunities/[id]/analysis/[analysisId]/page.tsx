@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ShieldAlert, Target, Award, ListChecks, CheckCircle, AlertCircle, XCircle, Trash2 } from "lucide-react";
 import api from "@/lib/api";
@@ -15,10 +15,17 @@ import { EvaluatorPerspective } from "@/components/analysis/EvaluatorPerspective
 import { ContractAssessments } from "@/components/analysis/ContractAssessments";
 import { DimensionalScores } from "@/components/analysis/DimensionalScores";
 import { CompanyComplianceCard } from "@/components/analysis/CompanyComplianceCard";
+import { ComplianceChecklistCard } from "@/components/analysis/ComplianceChecklistCard";
 import { DocumentAnalysisCard } from "@/components/analysis/DocumentAnalysisCard";
-import { Analysis } from "@/types/analysis";
+import { Analysis, ContractAssessment, RequirementAssessment } from "@/types/analysis";
 import { cn } from "@/lib/utils";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
+
+type OpportunitySummary = {
+    title?: string;
+    agency?: string;
+    solicitation_number?: string;
+};
 
 export default function AnalysisResultsPage() {
     const params = useParams();
@@ -27,33 +34,31 @@ export default function AnalysisResultsPage() {
     const opportunityId = params.id as string;
 
     const [analysis, setAnalysis] = useState<Analysis | null>(null);
-    const [opportunity, setOpportunity] = useState<any | null>(null);
+    const [opportunity, setOpportunity] = useState<OpportunitySummary | null>(null);
     const [loading, setLoading] = useState(true);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    useEffect(() => {
-        if (analysisId) {
-            fetchData();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [analysisId, opportunityId]);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             setLoading(true);
             const [analysisRes, oppRes] = await Promise.all([
                 api.get(`/api/analyses/${analysisId}`),
-                api.get(`/api/opportunities/${opportunityId}`)
+                api.get(`/api/opportunities/${opportunityId}`),
             ]);
-            setAnalysis(analysisRes.data);
-            setOpportunity(oppRes.data);
+            setAnalysis(analysisRes.data as Analysis);
+            setOpportunity(oppRes.data as OpportunitySummary);
         } catch (error) {
             console.error("Failed to fetch data", error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [analysisId, opportunityId]);
+
+    useEffect(() => {
+        if (!analysisId) return;
+        void fetchData();
+    }, [analysisId, fetchData]);
 
     const confirmDelete = async () => {
         setIsDeleting(true);
@@ -119,45 +124,72 @@ export default function AnalysisResultsPage() {
                 analysis.overall_relevance_score === "SOMEWHAT RELEVANT" ? 50 : 0;
 
     // V1 to V2 Requirements Compatibility
-    let requirements = analysis.requirements_matrix || [];
+    let requirements: RequirementAssessment[] = analysis.requirements_matrix || [];
 
-    if ((!requirements || requirements.length === 0) && analysis.gap_matrix) {
+    const coerceStringArray = (value: unknown): string[] => {
+        if (!Array.isArray(value)) return [];
+        return value.filter((v): v is string => typeof v === "string");
+    };
+
+    if (requirements.length === 0 && analysis.gap_matrix) {
         // Handle legacy gap_matrix (Dictionary: { Category: [Items] })
-        if (typeof analysis.gap_matrix === 'object' && !Array.isArray(analysis.gap_matrix)) {
-            const legacyMatrix = analysis.gap_matrix as Record<string, any[]>;
-            const flatReqs: any[] = [];
+        if (typeof analysis.gap_matrix === "object" && analysis.gap_matrix !== null && !Array.isArray(analysis.gap_matrix)) {
+            const legacyMatrix = analysis.gap_matrix as Record<string, unknown>;
+            const flatReqs: RequirementAssessment[] = [];
 
             Object.entries(legacyMatrix).forEach(([category, items]) => {
-                if (Array.isArray(items)) {
-                    items.forEach(item => {
-                        flatReqs.push({
-                            req_id: item.requirement_id || "N/A",
-                            requirement_text: item.text || "",
-                            coverage_status: item.coverage || "UNKNOWN",
-                            supporting_evidence: item.support_references || [],
-                            notes: item.gap_notes || "",
-                            category: category,
-                            criticality: "NORMAL"
-                        });
+                if (!Array.isArray(items)) return;
+
+                items.forEach((item) => {
+                    if (typeof item !== "object" || item === null) return;
+                    const obj = item as Record<string, unknown>;
+
+                    flatReqs.push({
+                        req_id: typeof obj.requirement_id === "string" ? obj.requirement_id : "N/A",
+                        requirement_text: typeof obj.text === "string" ? obj.text : "",
+                        coverage_status: typeof obj.coverage === "string" ? obj.coverage : "UNKNOWN",
+                        supporting_evidence: coerceStringArray(obj.support_references),
+                        notes: typeof obj.gap_notes === "string" ? obj.gap_notes : "",
+                        category,
+                        criticality: "NORMAL",
                     });
-                }
+                });
             });
+
             requirements = flatReqs;
         } else if (Array.isArray(analysis.gap_matrix)) {
-            requirements = analysis.gap_matrix;
+            // Best-effort mapping of legacy array into RequirementAssessment
+            const flatReqs: RequirementAssessment[] = [];
+
+            (analysis.gap_matrix as unknown[]).forEach((item) => {
+                if (typeof item !== "object" || item === null) return;
+                const obj = item as Record<string, unknown>;
+
+                flatReqs.push({
+                    req_id: typeof obj.req_id === "string" ? obj.req_id : "N/A",
+                    requirement_text: typeof obj.requirement_text === "string" ? obj.requirement_text : "",
+                    coverage_status: typeof obj.coverage_status === "string" ? obj.coverage_status : "UNKNOWN",
+                    supporting_evidence: coerceStringArray(obj.supporting_evidence),
+                    notes: typeof obj.notes === "string" ? obj.notes : "",
+                    category: typeof obj.category === "string" ? obj.category : "General",
+                    criticality: typeof obj.criticality === "string" ? obj.criticality : "NORMAL",
+                });
+            });
+
+            requirements = flatReqs;
         }
     }
 
     // V1 to V2 Summary Compatibility
-    let summary = analysis.requirements_summary;
+    let summary: Analysis["requirements_summary"] | undefined = analysis.requirements_summary;
     if (!summary && requirements.length > 0) {
         summary = {
             total: requirements.length,
-            strong: requirements.filter((r: any) => r.coverage_status === "STRONG").length,
-            moderate: requirements.filter((r: any) => r.coverage_status === "MODERATE").length,
-            weak: requirements.filter((r: any) => r.coverage_status === "WEAK").length,
-            gap: requirements.filter((r: any) => r.coverage_status === "GAP").length,
-            coverage_percentage: 0 // Calculate if needed, but UI typically assumes this exists
+            strong: requirements.filter((r) => r.coverage_status === "STRONG").length,
+            moderate: requirements.filter((r) => r.coverage_status === "MODERATE").length,
+            weak: requirements.filter((r) => r.coverage_status === "WEAK").length,
+            gap: requirements.filter((r) => r.coverage_status === "GAP").length,
+            coverage_percentage: 0, // Calculate if needed, but UI typically assumes this exists
         };
         // Quick calc for coverage
         const weightedScore = (summary.strong * 1.0) + (summary.moderate * 0.5) + (summary.weak * 0.25);
@@ -187,40 +219,50 @@ export default function AnalysisResultsPage() {
     }
 
     // V1 to V2 Contract Assessments Compatibility
-    let contractAssessments = analysis.contract_assessments || [];
-    if (contractAssessments.length === 0 && analysis.document_assessments && analysis.document_assessments.length > 0) {
+    let contractAssessments: ContractAssessment[] = analysis.contract_assessments || [];
+    if (contractAssessments.length === 0 && Array.isArray(analysis.document_assessments) && analysis.document_assessments.length > 0) {
         // Best effort mapping from document assessments
-        contractAssessments = analysis.document_assessments.map((doc: any) => ({
-            contract_name: doc.document_name || "Legacy Document",
-            contract_number: "N/A",
-            customer_agency: "Unknown Agency",
-            contract_value: "Unknown",
-            duration_months: 0,
-            service_branch: "Joint",
-            environment_match: "UNKNOWN",
-            scope_match: doc.relevance_score || "UNKNOWN",
-            relevance_score: doc.relevance_score?.includes("VERY") ? 90 : doc.relevance_score?.includes("SOMEWHAT") ? 50 : 70, // Rough guess
-            primary_use: doc.summary || "No summary available",
-            limitations: [],
-            is_padding: false
-        }));
+        contractAssessments = analysis.document_assessments.map((docRaw) => {
+            const doc = (typeof docRaw === "object" && docRaw !== null ? (docRaw as Record<string, unknown>) : {}) as Record<string, unknown>;
+
+            const relevance = typeof doc.relevance_score === "string" ? doc.relevance_score : "";
+
+            return {
+                contract_name: typeof doc.document_name === "string" ? doc.document_name : "Legacy Document",
+                contract_number: "N/A",
+                customer_agency: "Unknown Agency",
+                contract_value: "Unknown",
+                duration_months: 0,
+                service_branch: "Joint",
+                environment_match: "UNKNOWN",
+                scope_match: relevance || "UNKNOWN",
+                relevance_score: relevance.includes("VERY") ? 90 : relevance.includes("SOMEWHAT") ? 50 : 70, // Rough guess
+                primary_use: typeof doc.summary === "string" ? doc.summary : "No summary available",
+                limitations: [],
+                is_padding: false,
+            };
+        });
     }
 
     // V1 to V2 Roadmap Compatibility (Strengths/Weaknesses)
-    const normalizeItems = (items: any[], type: 'strength' | 'weakness') => {
-        if (!items) return [];
-        return items.map(item => {
-            if (typeof item === 'string') {
-                return type === 'strength'
+    const normalizeItems = (items: unknown, type: "strength" | "weakness") => {
+        if (!Array.isArray(items)) return [];
+
+        return items.map((item) => {
+            if (typeof item === "string") {
+                return type === "strength"
                     ? { title: "Strength", evidence: item, pws_alignment: "General" }
                     : { title: "Weakness", evidence: item, risk_level: "High", mitigation: "Review requirements carefully." };
             }
-            return item;
+            if (typeof item === "object" && item !== null) {
+                return item as Record<string, unknown>;
+            }
+            return { title: "Item", evidence: String(item) };
         });
     };
 
-    const strengths = normalizeItems(analysis.strengths || [], 'strength');
-    const weaknesses = normalizeItems(analysis.weaknesses || [], 'weakness');
+    const strengths = normalizeItems(analysis.strengths, "strength") as Array<{ title: string; evidence: string; pws_alignment?: string }>;
+    const weaknesses = normalizeItems(analysis.weaknesses, "weakness") as Array<{ title: string; evidence: string; risk_level: string; mitigation: string }>;
 
     const scoreColor = displayScore >= 70 ? "text-emerald-700 border-emerald-500 bg-emerald-50" :
         displayScore >= 40 ? "text-amber-700 border-amber-500 bg-amber-50" :
@@ -315,6 +357,8 @@ export default function AnalysisResultsPage() {
                 )
             }
 
+            <ComplianceChecklistCard opportunityId={opportunityId} />
+
             {/* RFP Document Analysis (Phase 0A) */}
             {
                 analysis.document_analysis && (
@@ -354,7 +398,7 @@ export default function AnalysisResultsPage() {
                 {/* Tab: Requirements Matrix (Full Width) */}
                 <TabsContent value="matrix" className="focus-visible:ring-0 outline-none">
                     <RequirementsMatrix
-                        requirements={requirements as any}
+                        requirements={requirements}
                         summary={summary}
                     />
                 </TabsContent>
@@ -390,7 +434,7 @@ export default function AnalysisResultsPage() {
                                     {strengths.map((s, i) => (
                                         <div key={i} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden hover:shadow-md transition-shadow">
                                             <h3 className="font-bold text-gray-900 text-lg mb-2">{s.title}</h3>
-                                            <p className="text-gray-600 text-sm mb-4 font-medium leading-relaxed">"{s.evidence}"</p>
+                                            <p className="text-gray-600 text-sm mb-4 font-medium leading-relaxed">“{s.evidence}”</p>
                                             <div className="flex items-center gap-2">
                                                 <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">HIGH IMPACT</Badge>
                                                 {s.pws_alignment && <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Supports {s.pws_alignment}</span>}
@@ -412,7 +456,7 @@ export default function AnalysisResultsPage() {
                                                 <h3 className="font-bold text-gray-900 text-lg">{w.title}</h3>
                                                 <Badge variant="destructive" className="px-2">{w.risk_level}</Badge>
                                             </div>
-                                            <p className="text-gray-600 text-sm mb-4 font-medium leading-relaxed">"{w.evidence}"</p>
+                                            <p className="text-gray-600 text-sm mb-4 font-medium leading-relaxed">“{w.evidence}”</p>
                                             <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-100">
                                                 <h4 className="text-xs font-bold text-indigo-700 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                                                     <Target className="w-3 h-3" /> Recommended Mitigation
@@ -440,7 +484,7 @@ export default function AnalysisResultsPage() {
                                     <div className="pt-6 border-t border-gray-100">
                                         <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2">Teaming Strategy</label>
                                         <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-600 italic">
-                                            "{analysis.recommendations?.teaming_suggestion || "No specific teaming required."}"
+                                            {analysis.recommendations?.teaming_suggestion || "No specific teaming required."}
                                         </div>
                                     </div>
 
@@ -464,6 +508,6 @@ export default function AnalysisResultsPage() {
                 description="Are you sure you want to delete this analysis permanently? This action cannot be undone."
                 isDeleting={isDeleting}
             />
-        </div >
+        </div>
     );
 }

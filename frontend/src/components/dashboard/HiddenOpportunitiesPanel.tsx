@@ -71,7 +71,7 @@ export function HiddenOpportunitiesPanel({
 
                             {opp.hidden_reason && (
                                 <p className="text-xs text-gray-400 italic mb-2 line-clamp-2">
-                                    "{opp.hidden_reason}"
+                                    “{opp.hidden_reason}”
                                 </p>
                             )}
 

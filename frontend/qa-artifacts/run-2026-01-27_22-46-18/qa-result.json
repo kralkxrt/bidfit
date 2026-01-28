@@ -1,0 +1,149 @@
+{
+  "artifactsDir": "/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa-artifacts/run-2026-01-27_22-46-18",
+  "checks": [
+    {
+      "name": "Dashboard loads",
+      "status": "pass"
+    },
+    {
+      "name": "Org switcher can switch orgs and dashboard refreshes",
+      "status": "fail",
+      "error": "locator.waitFor: Error: strict mode violation: getByText('Organization') resolved to 3 elements:\n    1) <span class=\"text-xs font-semibold uppercase tracking-wider text-slate-400\">Organization</span> aka getByText('Organization', { exact: true })\n    2) <div class=\"px-2 py-1.5 font-semibold text-xs text-slate-400 uppercase\">Your Organizations</div> aka getByText('Your Organizations')\n    3) <div tabindex=\"-1\" role=\"menuitem\" data-orientation=\"vertical\" data-radix-collection-item=\"\" class=\"relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0 text-blue-600\">…</div> aka getByRole('menuitem', { name: 'Add Organization' })\n\nCall log:\n\u001b[2m  - waiting for getByText('Organization') to be visible\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:79:42\n    at async check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:46:7)\n    at async run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:63:3)"
+    },
+    {
+      "name": "Opportunities list loads for current org",
+      "status": "pass"
+    },
+    {
+      "name": "New Opportunity form loads, submit works, redirects to analyze",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('Set-Aside Type').locator('..').getByRole('button')\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:109:78\n    at async check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:46:7)\n    at async run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:97:3)"
+    },
+    {
+      "name": "Analyze page: tabs render and Roxy visible on all tabs",
+      "status": "fail",
+      "error": "Error: No created opportunity URL to validate\n    at file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:132:39\n    at check (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:46:13)\n    at run (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:131:9)"
+    },
+    {
+      "name": "Documents tab: shows uploaded PDF in tree (best-effort)",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('tab', { name: 'Documents' })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:153:56\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:46:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:152:9)"
+    },
+    {
+      "name": "Ask Roxy: thinking indicator + streamed response (best-effort)",
+      "status": "fail",
+      "error": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByPlaceholder('Ask Roxy...')\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:169:17\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:46:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:167:9)"
+    },
+    {
+      "name": "Citations appear and clicking a citation navigates to Documents (best-effort)",
+      "status": "fail",
+      "error": "Error: No sources button found (no citations returned)\n    at file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:206:13\n    at async check (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:46:7)\n    at async run (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:185:3)"
+    },
+    {
+      "name": "Past Performance: list loads and can add a new contract",
+      "status": "fail",
+      "error": "locator.click: Error: strict mode violation: getByRole('link', { name: /Add Contract/i }) resolved to 2 elements:\n    1) <a href=\"/past-performance/new\" class=\"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-blue-600 text-white shadow-sm hover:bg-blue-700 focus-visible:ring-blue-600 h-9 px-4 py-2\">…</a> aka getByRole('link', { name: 'Add Contract' }).first()\n    2) <a href=\"/past-performance/new\" class=\"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-blue-600 text-white shadow-sm hover:bg-blue-700 focus-visible:ring-blue-600 h-9 px-4 py-2\">Add Contract</a> aka locator('a').filter({ hasText: /^Add Contract$/ })\n\nCall log:\n\u001b[2m  - waiting for getByRole('link', { name: /Add Contract/i })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:215:61\n    at async check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:46:7)\n    at async run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:210:3)"
+    },
+    {
+      "name": "Company Profile: loads, can edit and save",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Edit' })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:247:54\n    at async check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:46:7)\n    at async run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:225:3)"
+    },
+    {
+      "name": "Sidebar collapse toggles and persists across reload",
+      "status": "fail",
+      "error": "Error: Sidebar wordmark still visible after reload; collapse state not persisted\n    at file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:266:15\n    at async check (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:46:7)\n    at async run (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:253:3)"
+    }
+  ],
+  "console": [
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] rebuilding"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] done in 392ms"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] rebuilding"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] done in 159ms"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] rebuilding"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] done in 286ms"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to fetch past performance contracts AxiosError"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to fetch past performance contracts AxiosError"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] rebuilding"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] done in 248ms"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to save company profile AxiosError"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] rebuilding"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] done in 127ms"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "pageErrors": []
+}

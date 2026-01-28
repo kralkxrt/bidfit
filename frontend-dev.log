@@ -1,0 +1,39 @@
+
+> frontend@0.1.0 dev
+> next dev -p 3000
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1044ms
+ ✓ Compiled /src/middleware in 141ms (72 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 1877ms (832 modules)
+ GET /login 200 in 2033ms
+ ✓ Compiled in 138ms (405 modules)
+ ✓ Compiled /how-it-works in 325ms (822 modules)
+ GET /how-it-works 200 in 389ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /login 200 in 18ms
+ GET /login? 200 in 14ms
+ GET /login 200 in 14ms
+ ⚠ Found a change in next.config.mjs. Restarting the server to apply the changes...
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.3s
+ ✓ Compiled /src/middleware in 265ms (72 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 3.7s (1068 modules)
+ GET / 200 in 4075ms
+ ✓ Compiled in 386ms (484 modules)
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 1483ms (598 modules)
+ GET /favicon.ico 200 in 1527ms
+ ✓ Compiled /opportunities in 301ms (1154 modules)
+ ○ Compiling /opportunities/[id]/analyze ...
+ ✓ Compiled /opportunities/[id]/analyze in 807ms (1771 modules)

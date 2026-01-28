@@ -126,14 +126,37 @@ class AnalysisEngine:
         # 2. Fetch Selected Documents
         docs_query = select(Document).where(Document.id.in_(document_ids))
         docs_res = await db.execute(docs_query)
-        documents = docs_res.scalars().all()
+        all_documents = docs_res.scalars().all()
         
-        print(f"DEBUG: Requested {len(document_ids)} documents. Fetched {len(documents)} from DB.")
-        for d in documents:
-            print(f" - Found Doc: {d.id} | {d.filename}")
+        print(f"DEBUG: Requested {len(document_ids)} documents. Fetched {len(all_documents)} from DB.")
+        
+        # Filter out narrative/capability documents - only analyze actual contracts/CPARS
+        documents = []
+        narratives = []
+        for d in all_documents:
+            doc_type = (d.parsed_content or {}).get("actual_document_type", "").upper()
+            filename_lower = d.filename.lower()
+            
+            # Check if this is a narrative/capability statement
+            is_narrative = (
+                doc_type == "NARRATIVE" or
+                "capability" in filename_lower or
+                "narrative" in filename_lower or
+                "overview" in filename_lower or
+                (not d.contract_number and not doc_type == "CONTRACT_CPARS")
+            )
+            
+            if is_narrative:
+                narratives.append(d)
+                print(f" - Filtered out Narrative: {d.id} | {d.filename}")
+            else:
+                documents.append(d)
+                print(f" - Including Contract: {d.id} | {d.filename}")
+        
+        print(f"DEBUG: Filtered to {len(documents)} qualifying contracts (excluded {len(narratives)} narratives)")
         
         if not documents:
-             raise ValueError("No valid documents found for analysis")
+             raise ValueError("No valid contract documents found for analysis. All documents appear to be narratives or capability statements.")
 
         # 2.5 Fetch Company Profile for Phase 0 Check
         company_query = select(Company).where(Company.id == company_id)
@@ -164,6 +187,13 @@ class AnalysisEngine:
              req_matrix = analysis_data.get("requirements_matrix", [])
              print(f"DEBUG: LLM returned {len(assessments)} contract assessments.")
              print(f"DEBUG: LLM returned {len(req_matrix)} rows in requirements_matrix (Input was {len(parsed_requirements.get('requirements', []))}).")
+             
+             # Validate and normalize pp_requirements in document_analysis
+             if "document_analysis" in analysis_data and "pp_requirements" in analysis_data["document_analysis"]:
+                 analysis_data["document_analysis"]["pp_requirements"] = self._validate_pp_requirements(
+                     analysis_data["document_analysis"]["pp_requirements"],
+                     target_doc_text
+                 )
         except Exception as e:
             print(f"JSON Parsing failed: {e}")
             # Fallback structure
@@ -504,8 +534,17 @@ You must extract data from the following sections if present:
 - **Section M (Evaluation)**: Extract weighting, scoring factors, and evaluation method.
 
 **CRITICAL FOR SECTION L**: Do NOT use vague text. Extract ACTUAL NUMBERS:
-- ❌ BAD: "references_required": "relevant projects"
+- ❌ BAD: "references_required": "relevant projects" or "references_required": "NaN" or "references_required": "Not specified"
 - ✅ GOOD: "references_required": {{"min": 3, "max": 5}}
+
+**NUMERIC EXTRACTION RULES:**
+1. If you see "minimum of three (3) and maximum of five (5)" → Extract as {{"min": 3, "max": 5}}
+2. If you see "$500,000 to $20,000,000" → Extract as {{"min": 500000, "max": 20000000}}
+3. If you see "within 6 years" or "completed after 2019" → Extract as {{"recency_years": 6}} (calculate years from current date if year given)
+4. If you see "65% complete" → Extract as {{"completion_threshold": "65%"}}
+5. If a value is not found, use null or omit the field. NEVER use "NaN", "Not specified", "N/A", or empty strings.
+
+**VALIDATION**: After extraction, verify all numeric fields are actual numbers, not strings like "NaN" or "Not specified".
 
 Output a `document_analysis` block in the JSON (only if RFP detected).
 
@@ -802,3 +841,87 @@ Return ONLY the JSON object. No other text.
             return json.loads(json_str)
         except Exception as e:
             raise ValueError(f"Failed to parse JSON: {e}")
+    
+    def _validate_pp_requirements(self, pp_reqs: Dict[str, Any], document_text: str) -> Dict[str, Any]:
+        """
+        Validate and normalize pp_requirements extracted from Section L.
+        Replaces "NaN", "Not specified", empty strings with null or proper values.
+        Uses regex fallback if LLM extraction failed.
+        """
+        if not pp_reqs:
+            pp_reqs = {}
+        
+        validated = {}
+        
+        # Validate references_required
+        ref_req = pp_reqs.get("references_required")
+        if ref_req:
+            if isinstance(ref_req, dict):
+                min_val = ref_req.get("min")
+                max_val = ref_req.get("max")
+                # Check for NaN, "NaN", "Not specified", etc.
+                if min_val and str(min_val).upper() not in ["NAN", "N/A", "NULL", "NOT SPECIFIED", ""]:
+                    try:
+                        validated["references_required"] = {
+                            "min": int(float(str(min_val))),
+                            "max": int(float(str(max_val))) if max_val and str(max_val).upper() not in ["NAN", "N/A", "NULL", "NOT SPECIFIED", ""] else int(float(str(min_val)))
+                        }
+                    except (ValueError, TypeError):
+                        pass
+            elif isinstance(ref_req, (int, float)):
+                validated["references_required"] = {"min": int(ref_req), "max": int(ref_req)}
+        
+        # If still missing, try regex extraction
+        if "references_required" not in validated:
+            regex_results = self.llm.extract_section_l_patterns(document_text)
+            if "references_required" in regex_results:
+                validated["references_required"] = regex_results["references_required"]
+        
+        # Validate contract_value
+        contract_val = pp_reqs.get("contract_value")
+        if contract_val:
+            if isinstance(contract_val, dict):
+                min_val = contract_val.get("min")
+                max_val = contract_val.get("max")
+                if min_val and str(min_val).upper() not in ["NAN", "N/A", "NULL", "NOT SPECIFIED", ""]:
+                    try:
+                        # Handle string values like "$500,000"
+                        if isinstance(min_val, str):
+                            min_val = min_val.replace("$", "").replace(",", "").strip()
+                        if isinstance(max_val, str) and max_val:
+                            max_val = max_val.replace("$", "").replace(",", "").strip()
+                        
+                        validated["contract_value"] = {
+                            "min": int(float(str(min_val))),
+                            "max": int(float(str(max_val))) if max_val and str(max_val).upper() not in ["NAN", "N/A", "NULL", "NOT SPECIFIED", ""] else None
+                        }
+                    except (ValueError, TypeError):
+                        pass
+        
+        # If still missing, try regex extraction
+        if "contract_value" not in validated:
+            regex_results = self.llm.extract_section_l_patterns(document_text)
+            if "contract_value" in regex_results:
+                validated["contract_value"] = regex_results["contract_value"]
+        
+        # Validate recency_years
+        recency = pp_reqs.get("recency_years")
+        if recency:
+            if str(recency).upper() not in ["NAN", "N/A", "NULL", "NOT SPECIFIED", ""]:
+                try:
+                    validated["recency_years"] = int(float(str(recency)))
+                except (ValueError, TypeError):
+                    pass
+        
+        # If still missing, try regex extraction
+        if "recency_years" not in validated:
+            regex_results = self.llm.extract_section_l_patterns(document_text)
+            if "recency_years" in regex_results:
+                validated["recency_years"] = regex_results["recency_years"]
+        
+        # Copy other fields that don't need validation
+        for key in ["completion_threshold", "mandatory_requirements", "geographic_preference", "cpars_requested", "contract_types_preferred", "relevancy_criteria"]:
+            if key in pp_reqs and pp_reqs[key]:
+                validated[key] = pp_reqs[key]
+        
+        return validated

@@ -6,7 +6,6 @@ import {
     AlertCircle,
     XCircle,
     Search,
-    Filter
 } from "lucide-react";
 import {
     Table,
@@ -183,7 +182,7 @@ export function RequirementsMatrix({ requirements, summary }: RequirementsMatrix
                                         {req.supporting_evidence.length > 0 ? (
                                             req.supporting_evidence.map((evidence, i) => (
                                                 <div key={i} className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100/50 italic leading-relaxed">
-                                                    "{evidence}"
+                                                    “{evidence}”
                                                 </div>
                                             ))
                                         ) : !req.notes ? (

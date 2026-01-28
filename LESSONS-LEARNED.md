@@ -20,3 +20,13 @@
 
 ## 2026-01-11 - MVP Mode
 MVP MODE: Skipping Clerk auth. Single hardcoded user seeded to DB, multi-company via dropdown. Agent runs all DB operations via transaction pooler.
+
+## 2026-01-27 - Pre-UI Self-Check Protocol
+**Issue**: UI opened before build/runtime errors surfaced.
+**Root Cause**: Missing pre-open checks for frontend routes and console errors.
+**Solution**: Add a standard self-check before asking user to open UI.
+**Prevention**: Use this checklist after restarts or code changes:
+- Frontend: restart dev server, confirm no compile errors in terminal
+- Frontend: curl `/login`, `/opportunities`, `/company-profile`, `/roxy-test` and confirm non-404
+- Backend: confirm `/api/health` or a basic API call returns 200
+- If any errors, fix before asking user to test UI

@@ -1,0 +1,137 @@
+INFO:     Will watch for changes in these directories: ['/Users/kurtkarslioglu/Desktop/PP Gap Analysis/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [29199] using WatchFiles
+INFO:     Started server process [29249]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:58781 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58795 - "GET /api/companies HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:58797 - "GET /api/companies HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59414 - "GET /api/companies HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59418 - "GET /api/companies HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59422 - "GET /api/companies?org_id=1 HTTP/1.1" 307 Temporary Redirect
+2026-01-27 23:19:04,887 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-01-27 23:19:04,887 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-01-27 23:19:05,054 INFO sqlalchemy.engine.Engine select current_schema()
+2026-01-27 23:19:05,054 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-01-27 23:19:05,221 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-01-27 23:19:05,222 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-01-27 23:19:05,342 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-27 23:19:05,365 INFO sqlalchemy.engine.Engine SELECT users.id, users.email, users.name, users.password_hash, users.auth_provider, users.auth_provider_id, users.avatar_url, users.is_active, users.last_login_at, users.created_at, users.updated_at, users.deleted_at 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-01-27 23:19:05,365 INFO sqlalchemy.engine.Engine [generated in 0.00015s] ('admin@internal.local',)
+2026-01-27 23:19:05,553 INFO sqlalchemy.engine.Engine SELECT companies.id, companies.name, companies.cage_code, companies.uei, companies.duns, companies.primary_naics, companies.size_standard, companies.address_line1, companies.address_line2, companies.city, companies.state, companies.zip_code, companies.country, companies.website, companies.linkedin_url, companies.employee_count, companies.founded_year, companies.description, companies.business_size, companies.certifications, companies.certification_details, companies.gsa_schedules, companies.contract_vehicles, companies.primary_naic_code, companies.service_areas, companies.facility_clearance, companies.geographic_coverage, companies.annual_revenue, companies.bonding_capacity, companies.teaming_partners, companies.typical_role, companies.settings, companies.created_at, companies.updated_at, companies.deleted_at 
+FROM companies JOIN user_companies ON user_companies.company_id = companies.id 
+WHERE user_companies.user_id = $1::UUID
+2026-01-27 23:19:05,553 INFO sqlalchemy.engine.Engine [generated in 0.00012s] (UUID('64f538a2-4cfd-47a3-be23-9b9062a3565f'),)
+2026-01-27 23:19:05,904 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:59422 - "GET /api/companies/?org_id=1 HTTP/1.1" 200 OK
+2026-01-27 23:19:11,839 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-27 23:19:11,839 INFO sqlalchemy.engine.Engine SELECT users.id, users.email, users.name, users.password_hash, users.auth_provider, users.auth_provider_id, users.avatar_url, users.is_active, users.last_login_at, users.created_at, users.updated_at, users.deleted_at 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-01-27 23:19:11,839 INFO sqlalchemy.engine.Engine [cached since 6.474s ago] ('admin@internal.local',)
+2026-01-27 23:19:11,921 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:59428 - "GET /api/dashboard/summary?org_id=1 HTTP/1.1" 422 Unprocessable Entity
+2026-01-27 23:19:18,794 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-27 23:19:18,794 INFO sqlalchemy.engine.Engine SELECT users.id, users.email, users.name, users.password_hash, users.auth_provider, users.auth_provider_id, users.avatar_url, users.is_active, users.last_login_at, users.created_at, users.updated_at, users.deleted_at 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-01-27 23:19:18,794 INFO sqlalchemy.engine.Engine [cached since 13.43s ago] ('admin@internal.local',)
+2026-01-27 23:19:18,877 INFO sqlalchemy.engine.Engine SELECT user_companies.id, user_companies.user_id, user_companies.company_id, user_companies.role, user_companies.is_default, user_companies.created_at, user_companies.updated_at 
+FROM user_companies 
+WHERE user_companies.user_id = $1::UUID AND user_companies.company_id = $2::UUID
+2026-01-27 23:19:18,877 INFO sqlalchemy.engine.Engine [generated in 0.00012s] (UUID('64f538a2-4cfd-47a3-be23-9b9062a3565f'), UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'))
+2026-01-27 23:19:18,963 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM opportunities 
+WHERE opportunities.company_id = $1::UUID AND opportunities.is_hidden = false
+2026-01-27 23:19:18,963 INFO sqlalchemy.engine.Engine [generated in 0.00030s] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'),)
+2026-01-27 23:19:19,059 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM analyses 
+WHERE analyses.company_id = $1::UUID AND analyses.created_at >= $2::TIMESTAMP WITHOUT TIME ZONE
+2026-01-27 23:19:19,059 INFO sqlalchemy.engine.Engine [generated in 0.00051s] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'), datetime.datetime(2026, 1, 1, 0, 0))
+2026-01-27 23:19:19,157 INFO sqlalchemy.engine.Engine SELECT avg(CAST(analyses.overall_relevance_score AS FLOAT)) AS avg_1 
+FROM analyses 
+WHERE analyses.company_id = $1::UUID AND (analyses.overall_relevance_score ~ $2::VARCHAR)
+2026-01-27 23:19:19,157 INFO sqlalchemy.engine.Engine [generated in 0.00048s] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'), '^[0-9]+(\\.[0-9]+)?$')
+2026-01-27 23:19:19,246 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM analyses 
+WHERE analyses.company_id = $1::UUID AND analyses.go_no_go_recommendation = $2::VARCHAR
+2026-01-27 23:19:19,247 INFO sqlalchemy.engine.Engine [generated in 0.00026s] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'), 'GO')
+2026-01-27 23:19:19,328 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM analyses 
+WHERE analyses.company_id = $1::UUID AND analyses.go_no_go_recommendation = $2::VARCHAR
+2026-01-27 23:19:19,328 INFO sqlalchemy.engine.Engine [cached since 0.08172s ago] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'), 'NO-GO')
+2026-01-27 23:19:19,374 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM analyses 
+WHERE analyses.company_id = $1::UUID AND analyses.go_no_go_recommendation = $2::VARCHAR
+2026-01-27 23:19:19,374 INFO sqlalchemy.engine.Engine [cached since 0.1277s ago] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'), 'CONDITIONAL')
+2026-01-27 23:19:19,415 INFO sqlalchemy.engine.Engine SELECT opportunities.id, opportunities.title, opportunities.agency, opportunities.solicitation_number, opportunities.updated_at 
+FROM opportunities 
+WHERE opportunities.company_id = $1::UUID AND opportunities.deleted_at IS NULL ORDER BY opportunities.updated_at DESC 
+ LIMIT $2::INTEGER
+2026-01-27 23:19:19,415 INFO sqlalchemy.engine.Engine [generated in 0.00015s] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'), 5)
+2026-01-27 23:19:19,497 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:59431 - "GET /api/dashboard/summary?org_id=96f87f05-c153-42d5-ad39-547cada8fa4b HTTP/1.1" 200 OK
+2026-01-27 23:19:32,712 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-27 23:19:32,712 INFO sqlalchemy.engine.Engine SELECT users.id, users.email, users.name, users.password_hash, users.auth_provider, users.auth_provider_id, users.avatar_url, users.is_active, users.last_login_at, users.created_at, users.updated_at, users.deleted_at 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-01-27 23:19:32,712 INFO sqlalchemy.engine.Engine [cached since 27.35s ago] ('admin@internal.local',)
+2026-01-27 23:19:32,797 INFO sqlalchemy.engine.Engine SELECT user_companies.id, user_companies.user_id, user_companies.company_id, user_companies.role, user_companies.is_default, user_companies.created_at, user_companies.updated_at 
+FROM user_companies 
+WHERE user_companies.user_id = $1::UUID AND user_companies.company_id = $2::UUID
+2026-01-27 23:19:32,797 INFO sqlalchemy.engine.Engine [cached since 13.92s ago] (UUID('64f538a2-4cfd-47a3-be23-9b9062a3565f'), UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'))
+2026-01-27 23:19:32,846 INFO sqlalchemy.engine.Engine SELECT opportunities.id, opportunities.company_id, opportunities.solicitation_number, opportunities.title, opportunities.agency, opportunities.sub_agency, opportunities.contracting_office, opportunities.naics_code, opportunities.psc_code, opportunities.estimated_value, opportunities.set_aside_type, opportunities.contract_type, opportunities.response_due_date, opportunities.questions_due_date, opportunities.award_date, opportunities.status, opportunities.source_url, opportunities.notes, opportunities.pipeline_stage, opportunities.is_hidden, opportunities.hidden_at, opportunities.hidden_reason, opportunities.is_no_bid, opportunities.no_bid_reason, opportunities.is_favorite, opportunities.created_by, opportunities.created_at, opportunities.updated_at, opportunities.deleted_at 
+FROM opportunities 
+WHERE opportunities.company_id = $1::UUID AND opportunities.is_hidden = false ORDER BY opportunities.response_due_date ASC
+2026-01-27 23:19:32,846 INFO sqlalchemy.engine.Engine [generated in 0.00010s] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'),)
+2026-01-27 23:19:32,937 INFO sqlalchemy.engine.Engine SELECT companies.id AS companies_id, companies.name AS companies_name, companies.cage_code AS companies_cage_code, companies.uei AS companies_uei, companies.duns AS companies_duns, companies.primary_naics AS companies_primary_naics, companies.size_standard AS companies_size_standard, companies.address_line1 AS companies_address_line1, companies.address_line2 AS companies_address_line2, companies.city AS companies_city, companies.state AS companies_state, companies.zip_code AS companies_zip_code, companies.country AS companies_country, companies.website AS companies_website, companies.linkedin_url AS companies_linkedin_url, companies.employee_count AS companies_employee_count, companies.founded_year AS companies_founded_year, companies.description AS companies_description, companies.business_size AS companies_business_size, companies.certifications AS companies_certifications, companies.certification_details AS companies_certification_details, companies.gsa_schedules AS companies_gsa_schedules, companies.contract_vehicles AS companies_contract_vehicles, companies.primary_naic_code AS companies_primary_naic_code, companies.service_areas AS companies_service_areas, companies.facility_clearance AS companies_facility_clearance, companies.geographic_coverage AS companies_geographic_coverage, companies.annual_revenue AS companies_annual_revenue, companies.bonding_capacity AS companies_bonding_capacity, companies.teaming_partners AS companies_teaming_partners, companies.typical_role AS companies_typical_role, companies.settings AS companies_settings, companies.created_at AS companies_created_at, companies.updated_at AS companies_updated_at, companies.deleted_at AS companies_deleted_at 
+FROM companies 
+WHERE companies.id IN ($1::UUID)
+2026-01-27 23:19:32,937 INFO sqlalchemy.engine.Engine [generated in 0.00047s] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'),)
+2026-01-27 23:19:33,025 INFO sqlalchemy.engine.Engine SELECT DISTINCT ON (analyses.opportunity_id) analyses.id, analyses.company_id, analyses.opportunity_id, analyses.overall_relevance_score, analyses.scope_score, analyses.magnitude_score, analyses.complexity_score, analyses.recency_score, analyses.strengths, analyses.weaknesses, analyses.recommendations, analyses.gap_matrix, analyses.document_assessments, analyses.documents_analyzed, analyses.agent_confidence, analyses.go_no_go_recommendation, analyses.go_no_go_reasoning, analyses.requirements_matrix, analyses.requirements_summary, analyses.contract_assessments, analyses.red_flags, analyses.evaluator_perspective, analyses.overall_relevance_label, analyses.dimensional_scores, analyses.company_compliance, analyses.document_analysis, analyses.analysis_notes, analyses.user_notes, analyses.raw_llm_response, analyses.processing_time_seconds, analyses.tokens_used, analyses.model_version, analyses.created_by, analyses.created_at, analyses.updated_at, analyses.deleted_at 
+FROM analyses 
+WHERE analyses.opportunity_id IN ($1::UUID, $2::UUID, $3::UUID, $4::UUID, $5::UUID) ORDER BY analyses.opportunity_id, analyses.created_at DESC
+2026-01-27 23:19:33,025 INFO sqlalchemy.engine.Engine [generated in 0.00053s] (UUID('9b380ddc-a884-4ed9-84ba-3078657a5fc0'), UUID('4ee143cc-b927-4341-926e-1a83087f0c1e'), UUID('1c2210ec-1dc9-4796-b50b-77c3243fed61'), UUID('b19c1c59-43b4-4a37-9ee5-3d72b33db6fa'), UUID('2db34631-b550-4170-b9fe-1213dd042c5b'))
+2026-01-27 23:19:33,208 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:59436 - "GET /api/opportunities?org_id=96f87f05-c153-42d5-ad39-547cada8fa4b HTTP/1.1" 200 OK
+2026-01-27 23:19:39,117 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-27 23:19:39,117 INFO sqlalchemy.engine.Engine SELECT users.id, users.email, users.name, users.password_hash, users.auth_provider, users.auth_provider_id, users.avatar_url, users.is_active, users.last_login_at, users.created_at, users.updated_at, users.deleted_at 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-01-27 23:19:39,117 INFO sqlalchemy.engine.Engine [cached since 33.75s ago] ('admin@internal.local',)
+2026-01-27 23:19:39,200 INFO sqlalchemy.engine.Engine SELECT user_companies.id, user_companies.user_id, user_companies.company_id, user_companies.role, user_companies.is_default, user_companies.created_at, user_companies.updated_at 
+FROM user_companies 
+WHERE user_companies.user_id = $1::UUID AND user_companies.company_id = $2::UUID
+2026-01-27 23:19:39,200 INFO sqlalchemy.engine.Engine [cached since 20.32s ago] (UUID('64f538a2-4cfd-47a3-be23-9b9062a3565f'), UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'))
+2026-01-27 23:19:39,246 INFO sqlalchemy.engine.Engine SELECT companies.id, companies.name, companies.cage_code, companies.uei, companies.duns, companies.primary_naics, companies.size_standard, companies.address_line1, companies.address_line2, companies.city, companies.state, companies.zip_code, companies.country, companies.website, companies.linkedin_url, companies.employee_count, companies.founded_year, companies.description, companies.business_size, companies.certifications, companies.certification_details, companies.gsa_schedules, companies.contract_vehicles, companies.primary_naic_code, companies.service_areas, companies.facility_clearance, companies.geographic_coverage, companies.annual_revenue, companies.bonding_capacity, companies.teaming_partners, companies.typical_role, companies.settings, companies.created_at, companies.updated_at, companies.deleted_at 
+FROM companies 
+WHERE companies.id = $1::UUID
+2026-01-27 23:19:39,246 INFO sqlalchemy.engine.Engine [generated in 0.00030s] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'),)
+2026-01-27 23:19:39,335 INFO sqlalchemy.engine.Engine SELECT company_profiles.id, company_profiles.name, company_profiles.naics_codes, company_profiles.certifications, company_profiles.clearances, company_profiles.set_asides, company_profiles.employee_count, company_profiles.annual_revenue, company_profiles.bonding_capacity, company_profiles.cage_code, company_profiles.duns_number, company_profiles.created_at, company_profiles.updated_at 
+FROM company_profiles 
+WHERE company_profiles.id = $1::UUID
+2026-01-27 23:19:39,335 INFO sqlalchemy.engine.Engine [generated in 0.00041s] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'),)
+2026-01-27 23:19:39,431 INFO sqlalchemy.engine.Engine SELECT documents.id, documents.company_id, documents.document_type, documents.filename, documents.file_path, documents.file_size_bytes, documents.mime_type, documents.contract_number, documents.contract_title, documents.customer_agency, documents.customer_command, documents.customer_office, documents.contract_value, documents.contract_type, documents.period_of_performance_start, documents.period_of_performance_end, documents.naics_code, documents.psc_code, documents.clearance_level, documents.fte_count, documents.geographic_scope, documents.locations, documents.cpars_quality_rating, documents.cpars_schedule_rating, documents.cpars_cost_rating, documents.cpars_management_rating, documents.cpars_overall_rating, documents.raw_text, documents.parsed_content, documents.embedding, documents.processing_status, documents.processing_error, documents.processed_at, documents.tags, documents.notes, documents.created_by, documents.created_at, documents.updated_at, documents.deleted_at 
+FROM documents 
+WHERE documents.company_id = $1::UUID AND documents.deleted_at IS NULL
+2026-01-27 23:19:39,431 INFO sqlalchemy.engine.Engine [generated in 0.00057s] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'),)
+2026-01-27 23:19:39,611 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:59439 - "GET /api/company-profile?org_id=96f87f05-c153-42d5-ad39-547cada8fa4b HTTP/1.1" 200 OK
+2026-01-27 23:19:49,169 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-27 23:19:49,170 INFO sqlalchemy.engine.Engine SELECT users.id, users.email, users.name, users.password_hash, users.auth_provider, users.auth_provider_id, users.avatar_url, users.is_active, users.last_login_at, users.created_at, users.updated_at, users.deleted_at 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-01-27 23:19:49,170 INFO sqlalchemy.engine.Engine [cached since 43.8s ago] ('admin@internal.local',)
+2026-01-27 23:19:49,251 INFO sqlalchemy.engine.Engine SELECT user_companies.id, user_companies.user_id, user_companies.company_id, user_companies.role, user_companies.is_default, user_companies.created_at, user_companies.updated_at 
+FROM user_companies 
+WHERE user_companies.user_id = $1::UUID AND user_companies.company_id = $2::UUID
+2026-01-27 23:19:49,251 INFO sqlalchemy.engine.Engine [cached since 30.37s ago] (UUID('64f538a2-4cfd-47a3-be23-9b9062a3565f'), UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'))
+2026-01-27 23:19:49,296 INFO sqlalchemy.engine.Engine SELECT documents.id, documents.company_id, documents.document_type, documents.filename, documents.file_path, documents.file_size_bytes, documents.mime_type, documents.contract_number, documents.contract_title, documents.customer_agency, documents.customer_command, documents.customer_office, documents.contract_value, documents.contract_type, documents.period_of_performance_start, documents.period_of_performance_end, documents.naics_code, documents.psc_code, documents.clearance_level, documents.fte_count, documents.geographic_scope, documents.locations, documents.cpars_quality_rating, documents.cpars_schedule_rating, documents.cpars_cost_rating, documents.cpars_management_rating, documents.cpars_overall_rating, documents.raw_text, documents.parsed_content, documents.embedding, documents.processing_status, documents.processing_error, documents.processed_at, documents.tags, documents.notes, documents.created_by, documents.created_at, documents.updated_at, documents.deleted_at 
+FROM documents 
+WHERE documents.company_id = $1::UUID AND documents.deleted_at IS NULL AND documents.document_type IN ($2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR) ORDER BY documents.created_at DESC
+2026-01-27 23:19:49,297 INFO sqlalchemy.engine.Engine [generated in 0.00035s] (UUID('96f87f05-c153-42d5-ad39-547cada8fa4b'), 'contract', 'past_performance', 'cpars', 'contract_cpars')
+2026-01-27 23:19:49,382 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:59443 - "GET /api/past-performance?org_id=96f87f05-c153-42d5-ad39-547cada8fa4b HTTP/1.1" 200 OK

@@ -9,7 +9,7 @@ from sqlalchemy import select, desc
 
 from app.database import get_db
 from app.models import User, Analysis
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_org_id
 from app.services.llm_service import LLMService
 from app.services.analysis_engine import AnalysisEngine
 from app.config import settings
@@ -77,6 +77,7 @@ class BulkDeleteRequest(BaseModel):
 @router.post("/bulk-delete")
 async def bulk_delete_analyses(
     payload: BulkDeleteRequest,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -86,7 +87,12 @@ async def bulk_delete_analyses(
     if not payload.ids:
         return {"message": "No IDs provided"}
         
-    query = update(Analysis).where(Analysis.id.in_(payload.ids)).values(deleted_at=datetime.utcnow())
+    query = (
+        update(Analysis)
+        .where(Analysis.id.in_(payload.ids))
+        .where(Analysis.company_id == org_id)
+        .values(deleted_at=datetime.utcnow())
+    )
     await db.execute(query)
     await db.commit()
     
@@ -95,6 +101,7 @@ async def bulk_delete_analyses(
 @router.post("/", response_model=AnalysisDetailResponse, status_code=status.HTTP_201_CREATED)
 async def run_analysis(
     request: AnalysisCreateRequest,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     engine: AnalysisEngine = Depends(get_analysis_engine)
@@ -125,6 +132,8 @@ async def run_analysis(
         
         if not company_id:
              raise HTTPException(status_code=404, detail="Opportunity not found")
+        if company_id != org_id:
+            raise HTTPException(status_code=403, detail="Invalid org_id")
 
         analysis = await engine.run_analysis(
             db=db,
@@ -150,11 +159,12 @@ async def run_analysis(
 @router.get("/{id}", response_model=AnalysisDetailResponse)
 async def get_analysis(
     id: UUID,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Get analysis details."""
-    query = select(Analysis).where(Analysis.id == id)
+    query = select(Analysis).where(Analysis.id == id).where(Analysis.company_id == org_id)
     result = await db.execute(query)
     analysis = result.scalars().first()
     
@@ -166,7 +176,7 @@ async def get_analysis(
 @router.get("/", response_model=List[AnalysisResponse])
 async def list_analyses(
     opportunity_id: Optional[UUID] = None,
-    company_id: Optional[UUID] = None,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -176,8 +186,7 @@ async def list_analyses(
     if opportunity_id:
         stmt = stmt.where(Analysis.opportunity_id == opportunity_id)
     
-    if company_id:
-        stmt = stmt.where(Analysis.company_id == company_id)
+    stmt = stmt.where(Analysis.company_id == org_id)
         
     result = await db.execute(stmt)
     return result.scalars().all()
@@ -185,6 +194,7 @@ async def list_analyses(
 @router.post("/{id}/export")
 async def export_analysis(
     id: UUID,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -194,7 +204,7 @@ async def export_analysis(
     from app.models import Opportunity
     
     # Fetch analysis
-    query = select(Analysis).where(Analysis.id == id)
+    query = select(Analysis).where(Analysis.id == id).where(Analysis.company_id == org_id)
     result = await db.execute(query)
     analysis = result.scalars().first()
     

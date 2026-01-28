@@ -2,11 +2,9 @@
 
 import React from "react";
 import {
-    CheckCircle,
-    AlertCircle,
     XCircle,
     TrendingUp,
-    TrendingDown
+    TrendingDown,
 } from "lucide-react";
 import { DimensionalScores as DimensionalScoresType } from "@/types/analysis";
 import { cn } from "@/lib/utils";

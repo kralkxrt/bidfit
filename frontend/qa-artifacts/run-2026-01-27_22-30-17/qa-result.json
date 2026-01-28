@@ -1,0 +1,216 @@
+{
+  "artifactsDir": "/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa-artifacts/run-2026-01-27_22-30-17",
+  "checks": [
+    {
+      "name": "Login works (middleware requires auth_token cookie)",
+      "status": "fail",
+      "error": "page.waitForURL: Timeout 30000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation to \"http://localhost:3000/\" until \"load\"\n  navigated to \"http://localhost:3000/login\"\n============================================================\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:58:16\n    at async check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:7)\n    at async run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:50:3)"
+    },
+    {
+      "name": "Dashboard loads",
+      "status": "fail",
+      "error": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('heading', { name: /Good (morning|afternoon|evening)/ }) to be visible\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:64:83\n    at async check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:7)\n    at async run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:62:3)"
+    },
+    {
+      "name": "Org switcher can switch orgs and dashboard refreshes",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /Select Organization|Organization|Liberty Alliance|The Ginisis Group|Talion Construction/ })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:72:19\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:70:9)"
+    },
+    {
+      "name": "Opportunities list loads for current org",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('link', { name: 'Opportunities' })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:97:61\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:96:9)"
+    },
+    {
+      "name": "New Opportunity form loads, submit works, redirects to analyze",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('link', { name: /New Opportunity/i }).first()\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:105:72\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:104:9)"
+    },
+    {
+      "name": "Analyze page: tabs render and Roxy visible on all tabs",
+      "status": "fail",
+      "error": "Error: No created opportunity URL to validate\n    at file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:139:39\n    at check (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:138:9)"
+    },
+    {
+      "name": "Documents tab: shows uploaded PDF in tree (best-effort)",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('tab', { name: 'Documents' })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:160:56\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:159:9)"
+    },
+    {
+      "name": "Ask Roxy: thinking indicator + streamed response (best-effort)",
+      "status": "fail",
+      "error": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByPlaceholder('Ask Roxy...')\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:176:17\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:174:9)"
+    },
+    {
+      "name": "Citations appear and clicking a citation navigates to Documents (best-effort)",
+      "status": "fail",
+      "error": "Error: No sources button found (no citations returned)\n    at file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:213:13\n    at async check (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:39:7)\n    at async run (file:///Users/kurtkarslioglu/Desktop/PP%20Gap%20Analysis/frontend/qa/e2e-qa.mjs:192:3)"
+    },
+    {
+      "name": "Past Performance: list loads and can add a new contract",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('link', { name: 'Past Performance' })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:218:64\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:217:9)"
+    },
+    {
+      "name": "Company Profile: loads, can edit and save",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('link', { name: 'Company Profile' })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:233:63\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:232:9)"
+    },
+    {
+      "name": "Sidebar collapse toggles and persists across reload",
+      "status": "fail",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Collapse sidebar' })\u001b[22m\n\n    at /Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:263:20\n    at check (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:39:13)\n    at run (/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/qa/e2e-qa.mjs:260:9)"
+    }
+  ],
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+    }
+  ],
+  "pageErrors": []
+}

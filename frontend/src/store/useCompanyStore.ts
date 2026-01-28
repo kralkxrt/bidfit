@@ -26,8 +26,7 @@ export interface Company {
     certifications?: string[];
     certification_details?: Record<string, unknown>;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    gsa_schedules?: any[];
+    gsa_schedules?: unknown[];
     contract_vehicles?: string[];
 
     naics_codes?: string[];
@@ -39,8 +38,7 @@ export interface Company {
     annual_revenue?: number;
     bonding_capacity?: number;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    teaming_partners?: any[];
+    teaming_partners?: unknown[];
     typical_role?: string;
 }
 

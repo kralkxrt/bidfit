@@ -3,12 +3,13 @@ from pydantic import BaseModel
 from typing import List, Optional
 from uuid import UUID
 
-from app.dependencies import get_current_user, get_db
-from app.models import User
+from app.dependencies import get_current_user, get_db, require_org_id
+from app.models import User, UserCompany
 from app.services.document_processor import DocumentProcessor
 from app.services.storage_service import StorageService
 from app.services.llm_service import LLMService
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, update
 
 router = APIRouter()
 
@@ -28,7 +29,7 @@ def get_document_processor(
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
 async def upload_document(
     file: UploadFile = File(...),
-    company_id: UUID = Form(...),
+    org_id: UUID = Form(...),
     document_type: str = Form(...),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -41,6 +42,13 @@ async def upload_document(
         raise HTTPException(status_code=400, detail="No file provided")
     
     # Read file content
+    access_res = await db.execute(
+        select(UserCompany)
+        .where(UserCompany.user_id == current_user.id)
+        .where(UserCompany.company_id == org_id)
+    )
+    if not access_res.scalars().first():
+        raise HTTPException(status_code=403, detail="Invalid org_id")
     content = await file.read()
     
     try:
@@ -49,7 +57,7 @@ async def upload_document(
             db=db,
             file_content=content,
             filename=file.filename,
-            company_id=company_id,
+            company_id=org_id,
             document_type=document_type,
             user_id=current_user.id
         )
@@ -64,6 +72,7 @@ async def upload_document(
 @router.delete("/{id}")
 async def delete_document(
     id: UUID,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -71,7 +80,7 @@ async def delete_document(
     from app.models import Document
     from datetime import datetime
     
-    query = select(Document).where(Document.id == id)
+    query = select(Document).where(Document.id == id).where(Document.company_id == org_id)
     result = await db.execute(query)
     document = result.scalars().first()
     
@@ -90,6 +99,7 @@ class BulkDeleteRequest(BaseModel):
 @router.post("/bulk-delete")
 async def bulk_delete_documents(
     payload: BulkDeleteRequest,
+    org_id: UUID = Depends(require_org_id),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -101,7 +111,12 @@ async def bulk_delete_documents(
     if not payload.ids:
         return {"message": "No IDs provided"}
         
-    query = update(Document).where(Document.id.in_(payload.ids)).values(deleted_at=datetime.utcnow())
+    query = (
+        update(Document)
+        .where(Document.id.in_(payload.ids))
+        .where(Document.company_id == org_id)
+        .values(deleted_at=datetime.utcnow())
+    )
     await db.execute(query)
     await db.commit()
     
@@ -109,7 +124,7 @@ async def bulk_delete_documents(
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def list_documents(
-    company_id: Optional[UUID] = None,
+    org_id: UUID = Depends(require_org_id),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -121,8 +136,7 @@ async def list_documents(
     
     query = select(Document).where(Document.deleted_at.is_(None))
     
-    if company_id:
-        query = query.where(Document.company_id == company_id)
+    query = query.where(Document.company_id == org_id)
     
     query = query.order_by(Document.created_at.desc())
     result = await db.execute(query)

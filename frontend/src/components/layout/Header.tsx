@@ -10,8 +10,7 @@ import {
     SelectValue,
     SelectSeparator,
 } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PlusCircle, Settings, Trash2, Search, Bell } from 'lucide-react';
+import { PlusCircle, Settings, Trash2 } from 'lucide-react';
 import {
     Dialog,
     DialogContent,

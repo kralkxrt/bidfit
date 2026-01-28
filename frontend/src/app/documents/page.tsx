@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,
     TableBody,
@@ -36,13 +35,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 
-import { useCompanyStore } from "@/store/useCompanyStore";
+import { useOrgStore } from "@/lib/stores/orgStore";
 import api from "@/lib/api";
+import axios from "axios";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { MessageDialog } from "@/components/ui/MessageDialog";
 
@@ -62,7 +61,7 @@ type Document = {
 };
 
 export default function DocumentsPage() {
-    const { selectedCompanyId, companies, _hasHydrated } = useCompanyStore();
+    const { currentOrg } = useOrgStore();
     const [documents, setDocuments] = useState<Document[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -117,14 +116,12 @@ export default function DocumentsPage() {
     const [dragActive, setDragActive] = useState(false);
 
     const fetchDocuments = useCallback(async () => {
-        if (!_hasHydrated) return; // Wait for hydration before fetching
+        if (!currentOrg?.id) return;
 
         setIsLoading(true);
         try {
             const params: Record<string, string> = {};
-            if (selectedCompanyId && selectedCompanyId !== 'all') {
-                params.company_id = selectedCompanyId;
-            }
+            params.company_id = currentOrg.id;
 
             const response = await api.get('/api/documents/', { params });
             setDocuments(response.data);
@@ -133,13 +130,11 @@ export default function DocumentsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [selectedCompanyId, _hasHydrated]);
+    }, [currentOrg?.id]);
 
     useEffect(() => {
-        if (_hasHydrated) {
-            fetchDocuments();
-        }
-    }, [fetchDocuments, _hasHydrated]);
+        fetchDocuments();
+    }, [fetchDocuments]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -208,7 +203,7 @@ export default function DocumentsPage() {
     });
 
     const handleUpload = async () => {
-        if (selectedFiles.length === 0 || !selectedCompanyId) return;
+        if (selectedFiles.length === 0 || !currentOrg?.id) return;
 
         setIsUploading(true);
         setUploadProgress(0);
@@ -221,7 +216,7 @@ export default function DocumentsPage() {
             for (const file of selectedFiles) {
                 const formData = new FormData();
                 formData.append("file", file);
-                formData.append("company_id", selectedCompanyId);
+                formData.append("company_id", currentOrg.id);
                 formData.append("document_type", documentType);
 
                 try {
@@ -233,9 +228,23 @@ export default function DocumentsPage() {
 
                     completedFiles++;
                     setUploadProgress((completedFiles / totalFiles) * 100);
-                } catch (error: any) {
+                } catch (error: unknown) {
                     console.error(`Failed to upload ${file.name}`, error);
-                    const errorMessage = error.response?.data?.detail || error.message || "Unknown error";
+
+                    let errorMessage = "Unknown error";
+
+                    if (axios.isAxiosError(error)) {
+                        const data = error.response?.data;
+                        const detail =
+                            typeof data === "object" && data !== null && "detail" in data
+                                ? String((data as { detail?: unknown }).detail)
+                                : undefined;
+
+                        errorMessage = detail || error.message || errorMessage;
+                    } else if (error instanceof Error) {
+                        errorMessage = error.message || errorMessage;
+                    }
+
                     failedFiles.push({ name: file.name, reason: errorMessage });
                 }
             }
@@ -289,28 +298,29 @@ export default function DocumentsPage() {
     };
 
     const getStatusBadge = (status: string) => {
+        const base = "px-2 py-1 rounded-md text-xs font-semibold";
+
         switch (status) {
             case 'completed':
-                return <Badge className="bg-green-500 hover:bg-green-600">Processed</Badge>;
+                return <span className={`${base} bg-green-100 text-green-700`}>Processed</span>;
             case 'processing':
-                return <Badge variant="secondary" className="animate-pulse">Processing</Badge>;
+                return <span className={`${base} bg-amber-100 text-amber-700 animate-pulse`}>Processing</span>;
             case 'failed':
-                return <Badge variant="destructive">Failed</Badge>;
+                return <span className={`${base} bg-red-100 text-red-700`}>Failed</span>;
             default:
-                return <Badge variant="outline">{status}</Badge>;
+                return <span className={`${base} bg-slate-100 text-slate-700`}>{status}</span>;
         }
     };
 
-    // Removed blocking check to allow "All" view or default view
-    // if (!selectedCompanyId) { ... }
+    // Org context drives filtering
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="p-6 flex flex-col gap-6">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
-                        <p className="text-muted-foreground">
+                        <h1 className="text-2xl font-bold text-slate-900">Documents</h1>
+                        <p className="text-sm text-slate-500">
                             Manage past performance contracts and opportunity documents.
                         </p>
                     </div>
@@ -466,14 +476,15 @@ export default function DocumentsPage() {
                 </div>
             )}
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Library</CardTitle>
-                    <CardDescription>
-                        List of documents for {selectedCompanyId === 'all' || !selectedCompanyId ? 'all organizations' : companies.find(c => c.id === selectedCompanyId)?.name}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5">
+                <div className="mb-4">
+                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                        Library
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                        Past performance library for {currentOrg?.name || "your organization"}
+                    </p>
+                </div>
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -496,14 +507,14 @@ export default function DocumentsPage() {
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center">
+                                    <TableCell colSpan={7} className="h-24 text-center">
                                         <Loader2 className="mr-2 h-6 w-6 animate-spin inline" />
                                         Loading...
                                     </TableCell>
                                 </TableRow>
                             ) : filteredDocuments.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                    <TableCell colSpan={7} className="h-24 text-center text-slate-500">
                                         {filterType === 'all'
                                             ? "No documents found. Upload one to get started."
                                             : "No documents found matching the selected type."}
@@ -528,22 +539,22 @@ export default function DocumentsPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="capitalize">
+                                            <span className="px-2 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 capitalize">
                                                 {doc.document_type.replace('_', ' ')}
-                                            </Badge>
+                                            </span>
                                         </TableCell>
                                         <TableCell>{format(new Date(doc.created_at), 'MMM d, yyyy')}</TableCell>
                                         <TableCell>{getStatusBadge(doc.processing_status)}</TableCell>
                                         <TableCell>
                                             {doc.parsed_content?.contract_number ? (
-                                                <div className="text-xs text-muted-foreground">
-                                                    <div className="font-semibold text-foreground">
+                                                <div className="text-xs text-slate-500">
+                                                    <div className="font-semibold text-slate-700">
                                                         {doc.parsed_content.contract_number}
                                                     </div>
                                                     <div>{doc.parsed_content.customer_agency}</div>
                                                 </div>
                                             ) : (
-                                                <span className="text-xs text-muted-foreground">-</span>
+                                                <span className="text-xs text-slate-500">-</span>
                                             )}
                                         </TableCell>
                                         <TableCell>
@@ -561,8 +572,7 @@ export default function DocumentsPage() {
                         </TableBody>
 
                     </Table>
-                </CardContent >
-            </Card >
+            </div>
 
             <DeleteConfirmDialog
                 isOpen={isBulkDeleting}

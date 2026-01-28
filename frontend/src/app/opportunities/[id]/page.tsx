@@ -1,25 +1,16 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Upload, FileText, Loader2, Trash2, RefreshCw } from "lucide-react";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-    CardFooter,
-} from "@/components/ui/card";
 import {
     Tabs,
     TabsContent,
     TabsList,
     TabsTrigger,
 } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 
 // Simple toast mock if not present (assuming shadcn standard though)
 // Actually let's assume standard shadcn layout isn't fully scaffolded with Toaster
@@ -34,7 +25,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
@@ -47,6 +37,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { DocumentsTab } from "@/components/documents/DocumentsTab";
+import axios from "axios";
 
 interface Opportunity {
     id: string;
@@ -61,7 +53,7 @@ interface Opportunity {
         overall_relevance_score: number;
         overall_relevance_label: string;
         go_no_go: 'GO' | 'CONDITIONAL_GO' | 'NO_GO';
-        requirements_summary: any;
+        requirements_summary: unknown;
     };
 }
 
@@ -93,13 +85,17 @@ export default function OpportunityDetailPage() {
 
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [docToDelete, setDocToDelete] = useState<string | null>(null);
     const [isDeletingDoc, setIsDeletingDoc] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
 
     // Multi-file upload state
     const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+    const [analysisRunDate, setAnalysisRunDate] = useState<string | null>(null);
+
+    useEffect(() => {
+        setAnalysisRunDate(new Date().toLocaleDateString());
+    }, []);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [uploadDocType, setUploadDocType] = useState<string>("pws");
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -108,6 +104,7 @@ export default function OpportunityDetailPage() {
     // Message Dialog State
     const [messageOpen, setMessageOpen] = useState(false);
     const [messageData, setMessageData] = useState({ title: "", description: "", variant: "default" as "default" | "error" | "success" | "info" });
+    const [activeTab, setActiveTab] = useState<"requirements" | "documents" | "analysis">("requirements");
 
     const fetchOpportunity = async () => {
         try {
@@ -263,9 +260,21 @@ export default function OpportunityDetailPage() {
                     });
                     completedFiles++;
                     setUploadProgress((completedFiles / totalFiles) * 100);
-                } catch (error: any) {
+                } catch (error: unknown) {
                     console.error(`Failed to upload ${file.name}`, error);
-                    const msg = error.response?.data?.detail || error.message || "Unknown error";
+
+                    let msg = "Unknown error";
+                    if (axios.isAxiosError(error)) {
+                        const data = error.response?.data;
+                        const detail =
+                            typeof data === "object" && data !== null && "detail" in data
+                                ? String((data as { detail?: unknown }).detail)
+                                : undefined;
+                        msg = detail || error.message || msg;
+                    } else if (error instanceof Error) {
+                        msg = error.message || msg;
+                    }
+
                     failedFiles.push({ name: file.name, reason: msg });
                 }
             }
@@ -310,11 +319,15 @@ export default function OpportunityDetailPage() {
     // I will assume the new dialog replaces the amendment upload button logic too.
 
     if (loading) {
-        return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+        return (
+            <div className="p-6 flex justify-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        );
     }
 
     if (!opportunity) {
-        return <div>Opportunity not found</div>;
+        return <div className="p-6 text-sm text-slate-600">Opportunity not found.</div>;
     }
 
     // Consolidate requirements from ALL documents with amendment override logic
@@ -341,94 +354,114 @@ export default function OpportunityDetailPage() {
     // Convert map back to array
     const requirements = Array.from(requirementsMap.values());
 
+
     return (
-        <div className="space-y-6">
-            <div className="flex items-center space-x-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{opportunity.title}</h1>
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <span>{opportunity.solicitation_number}</span>
-                        <span>•</span>
-                        <span>{opportunity.agency}</span>
-                        <span>•</span>
-                        <Badge variant="outline">{opportunity.status}</Badge>
+        <div className="flex flex-col lg:flex-row gap-6 p-6">
+            <div className="flex-1 space-y-6">
+                <div className="flex items-center space-x-4">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900">{opportunity.title}</h1>
+                        <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-sm text-slate-500">
+                            <span>{opportunity.solicitation_number}</span>
+                            <span>•</span>
+                            <span>{opportunity.agency}</span>
+                            <span>•</span>
+                            <span className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-slate-100 text-slate-700">
+                                {opportunity.status}
+                            </span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <Tabs defaultValue="requirements" className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="requirements">Requirements</TabsTrigger>
-                    <TabsTrigger value="analysis">Gap Analysis</TabsTrigger>
-                    <TabsTrigger value="documents">Documents</TabsTrigger>
-                </TabsList>
+                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "requirements" | "documents" | "analysis")} className="space-y-4">
+                    <TabsList className="bg-transparent border-b border-slate-200 w-full justify-start gap-0 h-auto p-0">
+                        <TabsTrigger value="requirements" className="px-4 py-3 text-sm font-medium text-slate-500 data-[state=active]:text-blue-600 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none bg-transparent">
+                            Summary
+                        </TabsTrigger>
+                        <TabsTrigger value="documents" className="px-4 py-3 text-sm font-medium text-slate-500 data-[state=active]:text-blue-600 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none bg-transparent">
+                            Documents
+                        </TabsTrigger>
+                        <TabsTrigger value="analysis" className="px-4 py-3 text-sm font-medium text-slate-500 data-[state=active]:text-blue-600 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none bg-transparent">
+                            Gap Analysis
+                        </TabsTrigger>
+                    </TabsList>
 
-                <TabsContent value="requirements" className="space-y-4">
-                    {requirements.length === 0 ? (
-                        <Card>
-                            <CardHeader className="text-center pb-10 pt-10">
-                                <div className="mx-auto bg-muted rounded-full p-3 w-fit mb-4">
-                                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <TabsContent value="requirements" className="space-y-4">
+                        {requirements.length === 0 ? (
+                            <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5">
+                                <div className="text-center py-10">
+                                    <div className="mx-auto bg-slate-100 rounded-full p-3 w-fit mb-4">
+                                        <Upload className="h-6 w-6 text-slate-500" />
+                                    </div>
+                                    <div className="text-lg font-semibold text-slate-900">
+                                        No Requirements Extracted Yet
+                                    </div>
+                                    <div className="max-w-md mx-auto mt-2 text-sm text-slate-500">
+                                        Upload a Performance Work Statement (PWS) or Statement of Objectives (SOO) to automatically extract requirements.
+                                    </div>
+                                    <div className="mt-6">
+                                        <Button onClick={() => setIsUploadDialogOpen(true)} disabled={uploading}>
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            Upload PWS / SOW
+                                        </Button>
+                                    </div>
                                 </div>
-                                <CardTitle>No Requirements Extracted Yet</CardTitle>
-                                <CardDescription className="max-w-md mx-auto mt-2">
-                                    Upload a Performance Work Statement (PWS) or Statement of Objectives (SOO) to automatically extract requirements.
-                                </CardDescription>
-                                <div className="mt-6">
-                                    <Button onClick={() => setIsUploadDialogOpen(true)} disabled={uploading}>
-                                        <Upload className="mr-2 h-4 w-4" />
-                                        Upload PWS / SOW
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                        </Card>
-                    ) : (
+                            </div>
+                        ) : (
                         <div className="grid gap-4">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-medium">Extracted Requirements ({requirements.length})</h3>
-                                <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={handleRescan} disabled={refreshing}>
-                                        <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                                        {refreshing ? "Scanning..." : "Re-scan"}
-                                    </Button>
-                                    <Button variant="outline" size="sm" onClick={() => setIsUploadDialogOpen(true)}>
-                                        <Upload className="mr-2 h-4 w-4" /> Upload Document
-                                    </Button>
+                            <div>
+                                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                                    Extracted Requirements
+                                </h3>
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="text-sm text-slate-600">
+                                        {requirements.length} {requirements.length === 1 ? "requirement" : "requirements"}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" size="sm" onClick={handleRescan} disabled={refreshing}>
+                                            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                                            {refreshing ? "Scanning..." : "Re-scan"}
+                                        </Button>
+                                        <Button variant="outline" size="sm" onClick={() => setIsUploadDialogOpen(true)}>
+                                            <Upload className="mr-2 h-4 w-4" /> Upload Document
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* List uploaded documents */}
                             {documents.length > 0 && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-sm">Uploaded Documents</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-2">
-                                            {documents.map((doc) => (
-                                                <div key={doc.id} className="flex items-center justify-between p-2 border rounded">
-                                                    <div className="flex items-center gap-2">
-                                                        <FileText className="h-4 w-4" />
-                                                        <div>
-                                                            <div className="text-sm font-medium">{doc.filename}</div>
-                                                            <div className="text-xs text-muted-foreground capitalize">{doc.document_type}</div>
-                                                        </div>
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5">
+                                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                                        Uploaded Documents
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {documents.map((doc) => (
+                                            <div
+                                                key={doc.id}
+                                                className="flex items-center justify-between gap-3 p-3 border border-slate-200 rounded-lg"
+                                            >
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <FileText className="h-4 w-4 text-slate-400" />
+                                                    <div className="min-w-0">
+                                                        <div className="text-sm font-semibold text-slate-900 truncate">{doc.filename}</div>
+                                                        <div className="text-xs text-slate-500 capitalize">{doc.document_type}</div>
                                                     </div>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => setDocToDelete(doc.id)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                                    </Button>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setDocToDelete(doc.id)}
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             )}
 
                             {/* Delete Document Dialog */}
@@ -443,71 +476,81 @@ export default function OpportunityDetailPage() {
 
                             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                                 {/* Summary Cards */}
-                                <Card>
-                                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Technical</CardTitle></CardHeader>
-                                    <CardContent><div className="text-2xl font-bold">{requirements.filter(r => r.category.includes('Technical')).length}</div></CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Personnel</CardTitle></CardHeader>
-                                    <CardContent><div className="text-2xl font-bold">{requirements.filter(r => r.category.includes('Personnel')).length}</div></CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Critical Items</CardTitle></CardHeader>
-                                    <CardContent><div className="text-2xl font-bold text-red-600">{requirements.filter(r => r.criticality === 'Critical').length}</div></CardContent>
-                                </Card>
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5">
+                                    <div className="text-sm font-semibold text-slate-700">Technical</div>
+                                    <div className="mt-2 text-2xl font-bold text-slate-900">
+                                        {requirements.filter(r => r.category.includes('Technical')).length}
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5">
+                                    <div className="text-sm font-semibold text-slate-700">Personnel</div>
+                                    <div className="mt-2 text-2xl font-bold text-slate-900">
+                                        {requirements.filter(r => r.category.includes('Personnel')).length}
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5">
+                                    <div className="text-sm font-semibold text-slate-700">Critical Items</div>
+                                    <div className="mt-2 text-2xl font-bold text-red-600">
+                                        {requirements.filter(r => r.criticality === 'Critical').length}
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="space-y-4 mt-4">
                                 {requirements.map((req, idx) => (
-                                    <Card key={idx}>
-                                        <CardContent className="pt-6">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <Badge variant="outline">{req.id}</Badge>
-                                                <div className="flex space-x-2">
-                                                    <Badge variant="secondary">{req.category}</Badge>
-                                                    {req.criticality === 'Critical' && <Badge variant="destructive">Critical</Badge>}
-                                                </div>
+                                    <div key={idx} className="bg-white rounded-xl border border-slate-200 shadow-card p-5">
+                                        <div className="flex justify-between items-start gap-3 mb-2">
+                                            <span className="px-2 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
+                                                {req.id}
+                                            </span>
+                                            <div className="flex flex-wrap gap-2 justify-end">
+                                                <span className="px-2 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700">
+                                                    {req.category}
+                                                </span>
+                                                {req.criticality === 'Critical' && (
+                                                    <span className="px-2 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-700">
+                                                        Critical
+                                                    </span>
+                                                )}
                                             </div>
-                                            <p className="text-sm">{req.text}</p>
-                                        </CardContent>
-                                    </Card>
+                                        </div>
+                                        <p className="text-sm text-slate-700">{req.text}</p>
+                                    </div>
                                 ))}
                             </div>
                         </div>
                     )}
                 </TabsContent>
 
-                <TabsContent value="analysis">
-                    {opportunity.latest_analysis ? (
-                        <div className="space-y-6">
-                            <Card>
-                                <CardHeader>
-                                    <div className="flex items-center justify-between">
+                    <TabsContent value="analysis">
+                        {opportunity.latest_analysis ? (
+                            <div className="space-y-6">
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5">
+                                    <div className="flex items-start justify-between gap-4">
                                         <div>
-                                            <CardTitle>Latest Gap Analysis Results</CardTitle>
-                                            <CardDescription>
-                                                Analysis performed on {new Date().toLocaleDateString()}
-                                            </CardDescription>
+                                            <div className="text-lg font-semibold text-slate-900">
+                                                Latest Gap Analysis Results
+                                            </div>
+                                            <div className="text-sm text-slate-500 mt-1">
+                                                Analysis performed on {analysisRunDate || "—"}
+                                            </div>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Badge
-                                                className={
-                                                    opportunity.latest_analysis.go_no_go === 'GO' ? 'bg-emerald-600' :
-                                                        opportunity.latest_analysis.go_no_go === 'NO_GO' ? 'bg-red-600' : 'bg-amber-600'
-                                                }
-                                            >
-                                                {(opportunity.latest_analysis.go_no_go || 'PENDING').replace('_', ' ')}
-                                            </Badge>
-                                            <span className="text-2xl font-bold">
+                                            {opportunity.latest_analysis.go_no_go === 'GO' ? (
+                                                <span className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-green-100 text-green-700">GO</span>
+                                            ) : opportunity.latest_analysis.go_no_go === 'NO_GO' ? (
+                                                <span className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-red-100 text-red-700">NO-GO</span>
+                                            ) : (
+                                                <span className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-amber-100 text-amber-700">CONDITIONAL</span>
+                                            )}
+                                            <span className="text-2xl font-bold text-slate-900">
                                                 {opportunity.latest_analysis.overall_relevance_score}%
                                             </span>
                                         </div>
                                     </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-4">
-                                        <p className="text-sm text-gray-600">
-                                            Relevance: <span className="font-medium">{opportunity.latest_analysis.overall_relevance_label}</span>
+                                    <div className="mt-4 space-y-4">
+                                        <p className="text-sm text-slate-600">
+                                            Relevance: <span className="font-semibold text-slate-900">{opportunity.latest_analysis.overall_relevance_label}</span>
                                         </p>
                                         <div className="flex gap-4">
                                             <Button onClick={() => router.push(`/opportunities/${id}/analysis/${opportunity.latest_analysis?.id}`)}>
@@ -518,174 +561,151 @@ export default function OpportunityDetailPage() {
                                             </Button>
                                         </div>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    ) : (
-                        <AnalysisWizard opportunityId={id} requirements={requirements} />
-                    )}
-                </TabsContent>
+                                </div>
+                            </div>
+                        ) : (
+                            <AnalysisWizard opportunityId={id} requirements={requirements} />
+                        )}
+                    </TabsContent>
 
-                <TabsContent value="documents">
-                    {/* Simple list of uploaded files */}
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>Opportunity Documents</CardTitle>
-                            <Button size="sm" onClick={() => setIsUploadDialogOpen(true)}>
-                                <Upload className="mr-2 h-4 w-4" />
-                                Upload Documents
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            {documents.length === 0 ? (
-                                <div className="text-sm text-muted-foreground">No documents uploaded.</div>
-                            ) : (
-                                <div className="space-y-2">
-                                    {documents.map((doc) => (
-                                        <div key={doc.id} className="flex justify-between items-center p-3 border rounded-md">
-                                            <div className="flex items-center space-x-3">
-                                                <FileText className="h-5 w-5 text-blue-600" />
-                                                <div>
-                                                    <div className="font-medium">{doc.filename}</div>
-                                                    <div className="text-xs text-muted-foreground">{doc.document_type} • {new Date(doc.processed_at).toLocaleDateString()}</div>
-                                                </div>
+                    <TabsContent value="documents" className="space-y-4">
+                        <DocumentsTab
+                            opportunityId={id}
+                            highlightedCitation={null}
+                            onClearHighlight={() => undefined}
+                            onDocumentsRefresh={fetchOpportunity}
+                            opportunityDocuments={documents}
+                        />
+                    </TabsContent>
+                </Tabs>
+
+                {/* Upload Dialog */}
+                <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+                    <DialogContent className="sm:max-w-[500px]">
+                        <DialogHeader>
+                            <DialogTitle>Upload Opportunity Documents</DialogTitle>
+                            <DialogDescription>
+                                Upload PWS, RFP, Amendments, or other supporting files.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="file">Files</Label>
+                                <div
+                                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${dragActive
+                                        ? 'border-blue-500 bg-blue-50'
+                                        : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50'
+                                        }`}
+                                    onDragEnter={handleDrag}
+                                    onDragLeave={handleDrag}
+                                    onDragOver={handleDrag}
+                                    onDrop={handleDrop}
+                                    onClick={() => document.getElementById("opp-file-upload")?.click()}
+                                >
+                                    <Input
+                                        id="opp-file-upload"
+                                        type="file"
+                                        multiple
+                                        accept=".pdf,.docx,.doc,.txt"
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                    />
+                                    <Upload className={`mx-auto h-8 w-8 mb-2 ${dragActive ? "text-blue-500" : "text-slate-400"}`} />
+                                    <div className="text-sm font-medium text-slate-700">
+                                        Click to upload or drag and drop
+                                    </div>
+                                    <div className="text-xs text-slate-500 mt-1">
+                                        PDF, DOCX, TXT (Max 50MB)
+                                    </div>
+                                </div>
+                            </div>
+
+                            {selectedFiles.length > 0 && (
+                                <div className="bg-slate-50 rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
+                                    <div className="text-xs font-semibold text-gray-500 mb-2">
+                                        Selected Files ({selectedFiles.length})
+                                    </div>
+                                    {selectedFiles.map((file, idx) => (
+                                        <div key={idx} className="flex items-center justify-between text-sm bg-white p-2 rounded border shadow-sm">
+                                            <div className="flex items-center gap-2 truncate">
+                                                <FileText className="h-3 w-3 text-blue-500" />
+                                                <span className="truncate max-w-[200px] text-slate-700">{file.name}</span>
                                             </div>
-                                            <Badge variant="outline">Parsed</Badge>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedFiles(prev => prev.filter((_, i) => i !== idx));
+                                                }}
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </Button>
                                         </div>
                                     ))}
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
 
-            {/* Upload Dialog */}
-            <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-                <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle>Upload Opportunity Documents</DialogTitle>
-                        <DialogDescription>
-                            Upload PWS, RFP, Amendments, or other supporting files.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="file">Files</Label>
-                            <div
-                                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${dragActive
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50'
-                                    }`}
-                                onDragEnter={handleDrag}
-                                onDragLeave={handleDrag}
-                                onDragOver={handleDrag}
-                                onDrop={handleDrop}
-                                onClick={() => document.getElementById("opp-file-upload")?.click()}
-                            >
-                                <Input
-                                    id="opp-file-upload"
-                                    type="file"
-                                    multiple
-                                    accept=".pdf,.docx,.doc,.txt"
-                                    onChange={handleFileSelect}
-                                    className="hidden"
-                                />
-                                <Upload className={`mx-auto h-8 w-8 mb-2 ${dragActive ? "text-blue-500" : "text-slate-400"}`} />
-                                <div className="text-sm font-medium text-slate-700">
-                                    Click to upload or drag and drop
-                                </div>
-                                <div className="text-xs text-slate-500 mt-1">
-                                    PDF, DOCX, TXT (Max 50MB)
-                                </div>
-                            </div>
-                        </div>
-
-                        {selectedFiles.length > 0 && (
-                            <div className="bg-slate-50 rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
-                                <div className="text-xs font-semibold text-gray-500 mb-2">
-                                    Selected Files ({selectedFiles.length})
-                                </div>
-                                {selectedFiles.map((file, idx) => (
-                                    <div key={idx} className="flex items-center justify-between text-sm bg-white p-2 rounded border shadow-sm">
-                                        <div className="flex items-center gap-2 truncate">
-                                            <FileText className="h-3 w-3 text-blue-500" />
-                                            <span className="truncate max-w-[200px] text-slate-700">{file.name}</span>
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedFiles(prev => prev.filter((_, i) => i !== idx));
-                                            }}
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="type">Default Document Type</Label>
-                            <Select value={uploadDocType} onValueChange={setUploadDocType}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="pws">Performance Work Statement (PWS)</SelectItem>
-                                    <SelectItem value="rfp">Request for Proposal (RFP)</SelectItem>
-                                    <SelectItem value="amendment">Amendment</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <p className="text-[10px] text-muted-foreground">
-                                We will attempt to auto-detect type from filenames (e.g. "amend", "PWS").
-                            </p>
-                        </div>
-
-                        {uploading && (
                             <div className="grid gap-2">
-                                <div className="flex justify-between text-xs">
-                                    <span>Uploading...</span>
-                                    <span>{Math.round(uploadProgress)}%</span>
-                                </div>
-                                <Progress value={uploadProgress} />
+                                <Label htmlFor="type">Default Document Type</Label>
+                                <Select value={uploadDocType} onValueChange={setUploadDocType}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="pws">Performance Work Statement (PWS)</SelectItem>
+                                        <SelectItem value="rfp">Request for Proposal (RFP)</SelectItem>
+                                        <SelectItem value="amendment">Amendment</SelectItem>
+                                        <SelectItem value="other">Other</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-[10px] text-slate-500">
+                                    We will attempt to auto-detect type from filenames (e.g. &quot;amend&quot;, &quot;PWS&quot;).
+                                </p>
                             </div>
-                        )}
-                    </div>
 
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)} disabled={uploading}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleBatchUpload} disabled={selectedFiles.length === 0 || uploading}>
-                            {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Upload {selectedFiles.length > 0 && !uploading && `(${selectedFiles.length})`}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                            {uploading && (
+                                <div className="grid gap-2">
+                                    <div className="flex justify-between text-xs">
+                                        <span>Uploading...</span>
+                                        <span>{Math.round(uploadProgress)}%</span>
+                                    </div>
+                                    <Progress value={uploadProgress} />
+                                </div>
+                            )}
+                        </div>
 
-            <DeleteConfirmDialog
-                isOpen={!!docToDelete}
-                onClose={() => setDocToDelete(null)}
-                onConfirm={confirmDeleteDocument}
-                title="Delete Document"
-                description="Are you sure you want to delete this document? This will remove all extracted requirements and cannot be undone."
-                isDeleting={isDeletingDoc}
-            />
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)} disabled={uploading}>
+                                Cancel
+                            </Button>
+                            <Button onClick={handleBatchUpload} disabled={selectedFiles.length === 0 || uploading}>
+                                {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Upload {selectedFiles.length > 0 && !uploading && `(${selectedFiles.length})`}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
-            <MessageDialog
-                isOpen={messageOpen}
-                onClose={() => setMessageOpen(false)}
-                title={messageData.title}
-                description={messageData.description}
-                variant={messageData.variant}
-            />
+                <DeleteConfirmDialog
+                    isOpen={!!docToDelete}
+                    onClose={() => setDocToDelete(null)}
+                    onConfirm={confirmDeleteDocument}
+                    title="Delete Document"
+                    description="Are you sure you want to delete this document? This will remove all extracted requirements and cannot be undone."
+                    isDeleting={isDeletingDoc}
+                />
+
+                <MessageDialog
+                    isOpen={messageOpen}
+                    onClose={() => setMessageOpen(false)}
+                    title={messageData.title}
+                    description={messageData.description}
+                    variant={messageData.variant}
+                />
+            </div>
         </div>
     );
 }
@@ -758,33 +778,36 @@ function AnalysisWizard({ opportunityId, requirements }: { opportunityId: string
 
     if (requirements.length === 0) {
         return (
-            <Card>
-                <CardContent className="pt-6 text-center text-muted-foreground">
-                    <p>Please upload and extract requirements from a PWS/SOW first.</p>
-                </CardContent>
-            </Card>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5">
+                <div className="text-sm text-slate-600">
+                    Please upload and extract requirements from a PWS/SOW first.
+                </div>
+            </div>
         );
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Run Gap Analysis</CardTitle>
-                <CardDescription>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5">
+            <div className="mb-4">
+                <div className="text-lg font-semibold text-slate-900">Run Gap Analysis</div>
+                <div className="text-sm text-slate-500 mt-1">
                     Select past performance documents to compare against the {requirements.length} extracted requirements.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+                </div>
+            </div>
+
+            <div className="space-y-4">
                 {loadingDocs ? (
-                    <div className="text-center py-4 text-muted-foreground">Loading documents...</div>
+                    <div className="text-center py-4 text-slate-500">Loading documents...</div>
                 ) : ppDocuments.length === 0 ? (
-                    <div className="text-center py-4 text-muted-foreground">
+                    <div className="text-center py-4 text-slate-500">
                         No past performance documents found. Upload some in the Documents section first.
                     </div>
                 ) : (
                     <div className="space-y-2">
                         <div className="flex items-center justify-between mb-2">
-                            <div className="text-sm font-medium">Select Documents ({selectedDocs.length})</div>
+                            <div className="text-sm font-semibold text-slate-700">
+                                Select Documents ({selectedDocs.length})
+                            </div>
                             <div className="flex items-center space-x-2">
                                 <input
                                     type="checkbox"
@@ -793,13 +816,18 @@ function AnalysisWizard({ opportunityId, requirements }: { opportunityId: string
                                     checked={ppDocuments.length > 0 && selectedDocs.length === ppDocuments.length}
                                     onChange={toggleAll}
                                 />
-                                <label htmlFor="select-all" className="text-sm text-slate-600 cursor-pointer select-none">Select All</label>
+                                <label
+                                    htmlFor="select-all"
+                                    className="text-sm text-slate-600 cursor-pointer select-none"
+                                >
+                                    Select All
+                                </label>
                             </div>
                         </div>
                         {ppDocuments.map((doc) => (
                             <div
                                 key={doc.id}
-                                className={`flex items-center space-x-3 p-3 border rounded-md cursor-pointer hover:bg-muted ${selectedDocs.includes(doc.id) ? "bg-blue-50 border-blue-300" : ""
+                                className={`flex items-center space-x-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 ${selectedDocs.includes(doc.id) ? "bg-blue-50 border-blue-200" : ""
                                     }`}
                                 onClick={() => toggleDoc(doc.id)}
                             >
@@ -810,9 +838,11 @@ function AnalysisWizard({ opportunityId, requirements }: { opportunityId: string
                                     className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                                     onClick={(e) => e.stopPropagation()}
                                 />
-                                <div className="flex-1">
-                                    <div className="font-medium text-sm">{doc.contract_title || doc.filename}</div>
-                                    <div className="text-xs text-muted-foreground">
+                                <div className="flex-1 min-w-0">
+                                    <div className="font-semibold text-sm text-slate-900 truncate">
+                                        {doc.contract_title || doc.filename}
+                                    </div>
+                                    <div className="text-xs text-slate-500 truncate">
                                         {doc.customer_agency} • {doc.contract_number}
                                     </div>
                                 </div>
@@ -820,21 +850,20 @@ function AnalysisWizard({ opportunityId, requirements }: { opportunityId: string
                         ))}
                     </div>
                 )}
-            </CardContent>
-            <CardFooter>
-                <div className="flex justify-end w-full">
-                    <Button onClick={handleRunAnalysis} disabled={analyzing || selectedDocs.length === 0} className="w-full sm:w-auto">
-                        {analyzing ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Starting...
-                            </>
-                        ) : (
-                            "Run Gap Analysis"
-                        )}
-                    </Button>
-                </div>
-            </CardFooter>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+                <Button onClick={handleRunAnalysis} disabled={analyzing || selectedDocs.length === 0} className="w-full sm:w-auto">
+                    {analyzing ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Starting...
+                        </>
+                    ) : (
+                        "Run Gap Analysis"
+                    )}
+                </Button>
+            </div>
 
             {/* Analysis Progress Modal */}
             <Dialog open={analyzing} onOpenChange={() => { }}>
@@ -845,15 +874,15 @@ function AnalysisWizard({ opportunityId, requirements }: { opportunityId: string
                             Analyzing Opportunity...
                         </DialogTitle>
                         <DialogDescription className="space-y-4 pt-4" asChild>
-                            <div className="space-y-4 pt-4 text-sm text-muted-foreground">
-                                <p className="text-gray-700 font-medium">
+                            <div className="space-y-4 pt-4 text-sm text-slate-500">
+                                <p className="text-slate-700 font-semibold">
                                     This process typically takes 30-60 seconds.
                                 </p>
                                 <div className="bg-amber-50 text-amber-800 p-3 rounded-md text-sm border border-amber-200">
                                     ⚠️ Please do not refresh the page or navigate away.
                                 </div>
                                 <Progress value={undefined} className="h-2 w-full animate-pulse" />
-                                <p className="text-xs text-muted-foreground text-center">
+                                <p className="text-xs text-slate-500 text-center">
                                     Analyzing {selectedDocs.length} documents against {requirements.length} requirements...
                                 </p>
                             </div>
@@ -861,6 +890,6 @@ function AnalysisWizard({ opportunityId, requirements }: { opportunityId: string
                     </DialogHeader>
                 </DialogContent>
             </Dialog>
-        </Card>
+        </div>
     );
 }

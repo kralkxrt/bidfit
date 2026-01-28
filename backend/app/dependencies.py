@@ -1,9 +1,10 @@
 from typing import Generator, Optional
-from fastapi import Depends, HTTPException, status
+from uuid import UUID
+from fastapi import Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
-from app.models import User
+from app.models import User, UserCompany
 
 # MVP MODE: Hardcoded user email to fetch from DB
 # In a real app, this would verify a JWT token
@@ -27,3 +28,18 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+async def require_org_id(
+    org_id: UUID = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> UUID:
+    result = await db.execute(
+        select(UserCompany)
+        .where(UserCompany.user_id == current_user.id)
+        .where(UserCompany.company_id == org_id)
+    )
+    if not result.scalars().first():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid org_id")
+    return org_id

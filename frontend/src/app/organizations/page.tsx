@@ -9,12 +9,11 @@ import {
     PlusCircle,
     Search,
     Building2,
-    MoreHorizontal,
     ShieldCheck,
     Users,
     DollarSign,
     Briefcase,
-    Trash2
+    Trash2,
 } from 'lucide-react';
 import {
     Card,
@@ -38,7 +37,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
 export default function OrganizationsPage() {
-    const { companies, fetchCompanies, addCompany, removeCompany, isLoading } = useCompanyStore();
+    const { companies, fetchCompanies, addCompany, removeCompany } = useCompanyStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -100,11 +99,11 @@ export default function OrganizationsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50/50 p-8 space-y-8">
+        <div className="p-6 space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Organizations</h1>
+                    <h1 className="text-2xl font-bold text-slate-900">Organizations</h1>
                     <p className="text-slate-500 mt-1">Manage company profiles, capabilities, and contract vehicles.</p>
                 </div>
                 <div className="flex items-center gap-2">

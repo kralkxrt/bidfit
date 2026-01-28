@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
-    CheckCircle2,
     Search,
     BarChart3,
     FileText,
@@ -12,11 +12,9 @@ import {
     ShieldAlert,
     Clock,
     Target,
-    Database,
-    Briefcase,
     Building2,
     ArrowRight,
-    HelpCircle
+    HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,7 +82,7 @@ export default function HowItWorksPage() {
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-bold text-slate-900 mb-4">How BidMatch Works</h2>
                         <p className="text-lg text-slate-600">
-                            Our 6-step deep analysis process simulates a GS-15 evaluator's review.
+                            Our 6-step deep analysis process simulates a GS-15 evaluator&apos;s review.
                         </p>
                     </div>
 
@@ -93,7 +91,7 @@ export default function HowItWorksPage() {
                             number="1"
                             icon={<Building2 className="w-6 h-6" />}
                             title="Company Qualification"
-                            description="Checks set-asides, clearances, vehicles, and NAICS codes first. If you're disqualified, you'll know immediately."
+                            description="Checks set-asides, clearances, vehicles, and NAICS codes first. If you’re disqualified, you’ll know immediately."
                         />
                         <ProcessStep
                             number="2"
@@ -236,7 +234,7 @@ export default function HowItWorksPage() {
 
 // Sub-components
 
-function ProblemCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
+function ProblemCard({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
     return (
         <Card className="border-none shadow-sm bg-slate-50/50">
             <CardHeader className="pb-2">
@@ -252,7 +250,7 @@ function ProblemCard({ icon, title, description }: { icon: React.ReactNode, titl
     )
 }
 
-function ProcessStep({ number, icon, title, description }: { number: string, icon: React.ReactNode, title: string, description: string }) {
+function ProcessStep({ number, icon, title, description }: { number: string; icon: ReactNode; title: string; description: string }) {
     return (
         <Card className="relative overflow-hidden border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">

@@ -9,13 +9,6 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
     Table,
     TableBody,
     TableCell,
@@ -23,7 +16,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 
 interface Analysis {
     id: string;
@@ -95,25 +87,53 @@ export default function AnalysesPage() {
 
     const getScoreBadge = (score: string) => {
         if (score?.includes("VERY RELEVANT")) {
-            return <Badge className="bg-green-600">Very Relevant</Badge>;
+            return (
+                <span className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-green-100 text-green-700">
+                    Very Relevant
+                </span>
+            );
         }
         if (score?.includes("RELEVANT")) {
-            return <Badge className="bg-blue-600">Relevant</Badge>;
+            return (
+                <span className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-100 text-blue-700">
+                    Relevant
+                </span>
+            );
         }
         if (score?.includes("SOMEWHAT")) {
-            return <Badge className="bg-yellow-600">Somewhat Relevant</Badge>;
+            return (
+                <span className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-amber-100 text-amber-700">
+                    Somewhat Relevant
+                </span>
+            );
         }
-        return <Badge className="bg-red-600">Not Relevant</Badge>;
+        return (
+            <span className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-red-100 text-red-700">
+                Not Relevant
+            </span>
+        );
     };
 
     const getGoNoGoBadge = (recommendation: string) => {
         if (recommendation?.includes("GO") && !recommendation.includes("NO")) {
-            return <Badge className="bg-green-600">GO</Badge>;
+            return (
+                <span className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-green-100 text-green-700">
+                    GO
+                </span>
+            );
         }
         if (recommendation?.includes("CONDITIONAL")) {
-            return <Badge className="bg-yellow-600">CONDITIONAL</Badge>;
+            return (
+                <span className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-amber-100 text-amber-700">
+                    CONDITIONAL
+                </span>
+            );
         }
-        return <Badge className="bg-red-600">NO-GO</Badge>;
+        return (
+            <span className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-red-100 text-red-700">
+                NO-GO
+            </span>
+        );
     };
 
     const confirmDelete = async () => {
@@ -161,10 +181,10 @@ export default function AnalysesPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="p-6 space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Analysis History</h1>
-                <p className="text-muted-foreground">
+                <h1 className="text-2xl font-bold text-slate-900">Analysis History</h1>
+                <p className="text-sm text-slate-500">
                     View all gap analyses for your company.
                 </p>
             </div>
@@ -186,21 +206,22 @@ export default function AnalysesPage() {
                 </div>
             )}
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>All Analyses</CardTitle>
-                    <CardDescription>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5">
+                <div className="mb-4">
+                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                        All Analyses
+                    </h3>
+                    <div className="text-sm text-slate-500">
                         {analyses.length} {analyses.length === 1 ? "analysis" : "analyses"} found
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+                    </div>
+                </div>
                     {loading ? (
-                        <div className="py-10 text-center text-muted-foreground">Loading...</div>
+                        <div className="py-10 text-center text-slate-500">Loading...</div>
                     ) : analyses.length === 0 ? (
                         <div className="py-10 text-center">
-                            <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold mb-2">No analyses yet</h3>
-                            <p className="text-sm text-muted-foreground mb-4">
+                            <FileText className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+                            <h3 className="text-lg font-semibold mb-2 text-slate-900">No analyses yet</h3>
+                            <p className="text-sm text-slate-500 mb-4">
                                 Run your first gap analysis to see results here.
                             </p>
                             <Button onClick={() => router.push("/opportunities")}>
@@ -230,7 +251,7 @@ export default function AnalysesPage() {
                                 {analyses.map((analysis) => (
                                     <TableRow
                                         key={analysis.id}
-                                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                        className="cursor-pointer hover:bg-slate-50 transition-colors"
                                         data-state={selectedIds.includes(analysis.id) ? "selected" : undefined}
                                         onClick={() =>
                                             router.push(
@@ -249,11 +270,11 @@ export default function AnalysesPage() {
                                         </TableCell>
                                         <TableCell className="font-medium">
                                             <div className="flex items-center space-x-2">
-                                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                                <FileText className="h-4 w-4 text-slate-400" />
                                                 <div>
-                                                    <div>{analysis.opportunity_title}</div>
+                                                    <div className="text-slate-900">{analysis.opportunity_title}</div>
                                                     {analysis.opportunity_solicitation && (
-                                                        <div className="text-xs text-muted-foreground">
+                                                        <div className="text-xs text-slate-500">
                                                             {analysis.opportunity_solicitation}
                                                         </div>
                                                     )}
@@ -288,8 +309,7 @@ export default function AnalysesPage() {
                             </TableBody>
                         </Table>
                     )}
-                </CardContent>
-            </Card>
+            </div>
 
             <DeleteConfirmDialog
                 isOpen={isBulkDeleting}

@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Lock, Hexagon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
+import { Hexagon } from "lucide-react";
 
 export default function LoginPage() {
     const [username, setUsername] = useState("");
@@ -32,7 +32,7 @@ export default function LoginPage() {
             } else {
                 setError("Incorrect password");
             }
-        } catch (err) {
+        } catch {
             setError("Something went wrong");
         } finally {
             setLoading(false);
@@ -93,6 +93,6 @@ export default function LoginPage() {
                 </CardContent>
 
             </Card>
-        </div >
+        </div>
     );
 }

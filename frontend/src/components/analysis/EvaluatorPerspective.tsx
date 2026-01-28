@@ -26,7 +26,7 @@ export function EvaluatorPerspective({ perspective }: EvaluatorPerspectiveProps)
                         Simulated Source Selection Board View
                     </p>
                     <div className="relative">
-                        <span className="absolute -top-3 -left-4 text-4xl text-emerald-500/20 font-serif">"</span>
+                        <span className="absolute -top-3 -left-4 text-4xl text-emerald-500/20 font-serif">&quot;</span>
                         <p className="text-gray-300 leading-relaxed text-base italic pl-2">
                             {perspective}
                         </p>

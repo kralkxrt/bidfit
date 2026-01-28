@@ -15,7 +15,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
     Select,
@@ -49,18 +48,8 @@ export function OrganizationSheet({ companyId, open, onOpenChange }: Organizatio
         }
     }, [open, companyId, companies]);
 
-    const handleChange = (field: keyof Company, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleNestedChange = (field: keyof Company, key: string, value: any) => {
-        // For array or object updates
-        setFormData(prev => {
-            const current = prev[field] as any || {};
-            // Simple handling for now, can be expanded
-            return { ...prev, [field]: { ...current, [key]: value } };
-        });
+    const handleChange = <K extends keyof Company>(field: K, value: Company[K]) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
     const handleSave = async () => {

@@ -1,0 +1,49 @@
+
+> frontend@0.1.0 dev
+> next dev -p 3000
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 1755ms
+   Reload env: .env.local
+ ✓ Compiled /src/middleware in 171ms (72 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 2.5s (832 modules)
+ GET /login 200 in 2664ms
+ ✓ Compiled in 223ms (405 modules)
+ ✓ Compiled /_not-found in 128ms (803 modules)
+ GET /login 404 in 423ms
+ HEAD /login 200 in 22ms
+ ✓ Compiled /api/auth in 150ms (443 modules)
+ POST /api/auth 400 in 188ms
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 962ms (1062 modules)
+ POST /api/auth 404 in 1035ms
+ HEAD /api/auth 405 in 28ms
+ POST /api/auth 404 in 115ms
+ POST /api/auth 404 in 15ms
+ POST /api/auth 404 in 15ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1341ms (1301 modules)
+ HEAD / 200 in 1490ms
+ GET / 200 in 30ms
+ ○ Compiling /opportunities/new ...
+ ✓ Compiled /opportunities/new in 597ms (1363 modules)
+ ✓ Compiled /past-performance in 344ms (1367 modules)
+ ✓ Compiled /company-profile in 285ms (1381 modules)
+ ✓ Compiled /_not-found in 237ms (1384 modules)
+ GET /company-profile 404 in 347ms
+ GET /_next/static/css/app/layout.css?v=1769572107560 404 in 24ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 26ms
+ GET /_next/static/chunks/main-app.js?v=1769572107560 404 in 26ms
+ GET /_next/static/chunks/app/layout.js 404 in 26ms
+ ✓ Compiled /api/auth in 268ms (653 modules)
+ HEAD /api/auth 405 in 312ms
+ POST /api/auth 200 in 4ms
+ ✓ Compiled in 1008ms (1337 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/kurtkarslioglu/Desktop/PP Gap Analysis/frontend/.next/cache/webpack/server-development/1.pack.gz'
+ ○ Compiling /login ...
+ GET / 200 in 159ms
+ GET / 200 in 30ms

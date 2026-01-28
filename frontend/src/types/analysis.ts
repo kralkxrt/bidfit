@@ -99,14 +99,12 @@ export interface Analysis {
     document_analysis?: DocumentAnalysis;
 
     // Legacy fields (optional)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    gap_matrix?: any;
+    gap_matrix?: unknown;
     scope_score?: string;
     magnitude_score?: string;
     complexity_score?: string;
     recency_score?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    document_assessments?: any[];
+    document_assessments?: unknown[];
 }
 
 export interface PPRequirements {
