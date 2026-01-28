@@ -23,19 +23,21 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     logger.info("Starting application...")
     
-    # Validate required environment variables
+    # Validate CRITICAL environment variables (others have defaults)
     missing_vars = []
     if not settings.DATABASE_URL:
         missing_vars.append("DATABASE_URL")
     if not settings.ANTHROPIC_API_KEY:
         missing_vars.append("ANTHROPIC_API_KEY")
-    if not settings.OPENAI_API_KEY:
-        missing_vars.append("OPENAI_API_KEY")
     
     if missing_vars:
         logger.error(f"CRITICAL: Missing required environment variables: {', '.join(missing_vars)}")
         logger.error("Application cannot start without these variables.")
         raise RuntimeError(f"Missing required env vars: {', '.join(missing_vars)}")
+    
+    # Warn about optional but recommended variables
+    if not settings.OPENAI_API_KEY:
+        logger.warning("WARNING: OPENAI_API_KEY not set. Embeddings will not work, but app will start.")
     
     # Initialize database
     if engine:
