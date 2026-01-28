@@ -39,23 +39,13 @@ async def lifespan(app: FastAPI):
     if not settings.OPENAI_API_KEY:
         logger.warning("WARNING: OPENAI_API_KEY not set. Embeddings will not work, but app will start.")
     
-    # Test database connection but don't create schema during startup
-    # (Alembic migrations handle schema creation)
-    if engine:
-        try:
-            # Just test connectivity - don't hang on schema creation
-            logger.info("Testing database connection...")
-            async with engine.connect() as conn:
-                await conn.execute(text("SELECT 1"))
-            logger.info("✓ Database connection OK")
-        except Exception as e:
-            logger.error(f"✗ Database connection error: {e}", exc_info=True)
-            logger.error(f"Check DATABASE_URL is correct and pgBouncer is accessible")
-            # Don't raise - let app start anyway, queries will fail if DB is down
-            logger.warning("⚠ Continuing startup without database - queries will fail")
-    else:
+    # Don't test database during startup - just trust it's configured
+    # (Alembic migrations handle schema creation, queries will fail if DB is down)
+    if not engine:
         logger.error("✗ Database engine not configured")
         raise RuntimeError("Database engine not initialized")
+    else:
+        logger.info("Database engine configured")
     
     logger.info("=" * 60)
     yield
