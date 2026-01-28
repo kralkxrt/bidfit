@@ -20,18 +20,45 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    logger.info("=" * 60)
+    logger.info("Starting application...")
+    
+    # Validate required environment variables
+    missing_vars = []
+    if not settings.DATABASE_URL:
+        missing_vars.append("DATABASE_URL")
+    if not settings.ANTHROPIC_API_KEY:
+        missing_vars.append("ANTHROPIC_API_KEY")
+    if not settings.OPENAI_API_KEY:
+        missing_vars.append("OPENAI_API_KEY")
+    
+    if missing_vars:
+        logger.error(f"CRITICAL: Missing required environment variables: {', '.join(missing_vars)}")
+        logger.error("Application cannot start without these variables.")
+        raise RuntimeError(f"Missing required env vars: {', '.join(missing_vars)}")
+    
+    # Initialize database
     if engine:
         try:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
-            print("Database initialized successfully")
+            logger.info("✓ Database initialized successfully")
         except Exception as e:
-            print(f"Warning: Database initialization error: {e}")
+            logger.error(f"✗ Database initialization error: {e}", exc_info=True)
+            raise
+    else:
+        logger.error("✗ Database engine not configured")
+        raise RuntimeError("Database engine not initialized")
+    
+    logger.info("=" * 60)
     yield
+    
     # Shutdown
+    logger.info("Shutting down application...")
     if engine:
         await engine.dispose()
-        print("Database connection pool closed")
+        logger.info("✓ Database connection pool closed")
+    logger.info("=" * 60)
 
 app = FastAPI(
     title=settings.APP_NAME,

@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 import json
 import re
 from app.config import settings
+from app.logger import logger
 
 class LLMService:
     """
@@ -34,7 +35,7 @@ class LLMService:
             return self._parse_json(text)
 
         except Exception as e:
-            print(f"LLM Extraction failed: {e}")
+            logger.exception("LLM Extraction failed")
             return {"error": str(e)}
 
     async def extract_requirements(self, document_text: str) -> Dict[str, Any]:
@@ -133,21 +134,21 @@ Return a JSON object:
 }}
 ```
 """
-        # Debug: Print document info
-        print(f"\n{'='*60}")
-        print(f"DEBUG EXTRACT_REQUIREMENTS:")
-        print(f"Document text length: {len(document_text)} chars")
-        print(f"Truncated to: {min(len(document_text), 50000)} chars")
-        print(f"\nFirst 2000 chars of document:")
-        print(document_text[:2000])
-        print(f"\n--- Checking for Section indicators ---")
+        # Debug logging (guarded by DEBUG flag)
+        logger.debug("=" * 60)
+        logger.debug("DEBUG EXTRACT_REQUIREMENTS:")
+        logger.debug(f"Document text length: {len(document_text)} chars")
+        logger.debug(f"Truncated to: {min(len(document_text), 50000)} chars")
+        logger.debug("First 2000 chars of document:")
+        logger.debug(document_text[:2000])
+        logger.debug("--- Checking for Section indicators ---")
         for section in ['SECTION C', 'Section C', 'PART C', 'C.1', 'C.2', 'SECTION L', 'L.5']:
             if section in document_text:
                 idx = document_text.find(section)
-                print(f"  Found '{section}' at position {idx}")
+                logger.debug(f"  Found '{section}' at position {idx}")
             else:
-                print(f"  NOT FOUND: '{section}'")
-        print(f"{'='*60}\n")
+                logger.debug(f"  NOT FOUND: '{section}'")
+        logger.debug("=" * 60)
         
         try:
             response = await self.client.messages.create(
@@ -159,10 +160,10 @@ Return a JSON object:
                 ]
             )
             result = self._parse_json(response.content[0].text)
-            print(f"DEBUG: Extracted {len(result.get('requirements', []))} requirements")
+            logger.debug(f"Extracted {len(result.get('requirements', []))} requirements")
             return result
         except Exception as e:
-             print(f"Requirement Extraction failed: {e}")
+             logger.exception("Requirement Extraction failed")
              return {"error": str(e)}
 
     def _parse_json(self, text: str) -> Dict[str, Any]:
@@ -190,8 +191,8 @@ Return a JSON object:
             
             return json.loads(json_str)
         except Exception as e:
-            print(f"JSON Parse Error: {e}")
-            print(f"Text snippet: {text[:200]}")
+            logger.exception("JSON Parse Error")
+            logger.debug(f"Text snippet: {text[:200]}")
             return {"error": "Failed to parse JSON", "raw_text": text[:1000]}
 
     async def analyze(self, prompt: str, max_tokens: Optional[int] = None) -> str:
