@@ -19,11 +19,17 @@ engine = None
 SessionLocal = None
 
 if database_url:
+    # CRITICAL: connect_args configuration
+    # - json_deserializer=None: Disable JSON codec setup (causes conflicts in multi-worker)
+    # - server_settings: Disable other async codec setups
     engine = create_async_engine(
         database_url,
         echo=settings.DEBUG,
-        # Use NullPool to avoid connection pooling conflicts with PgBouncer
         poolclass=NullPool,
+        connect_args={
+            "json_deserializer": None,  # Disable asyncpg codec setup
+            "server_settings": {"jit": "off"},  # Disable JIT to reduce prepared statement issues
+        }
     )
     SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
