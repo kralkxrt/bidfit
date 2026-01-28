@@ -1,11 +1,31 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from sqlalchemy import text
 from app.config import settings
+from app.database import engine, Base
 from app.api.routes import companies, documents, opportunities, analyses, roxy, profile, dashboard, company_profile, past_performance, compliance_matrix
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    if engine:
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            print("Database initialized successfully")
+        except Exception as e:
+            print(f"Warning: Database initialization error: {e}")
+    yield
+    # Shutdown
+    if engine:
+        await engine.dispose()
+        print("Database connection pool closed")
 
 app = FastAPI(
     title=settings.APP_NAME,
-    debug=settings.DEBUG
+    debug=settings.DEBUG,
+    lifespan=lifespan
 )
 
 import os
@@ -52,3 +72,17 @@ async def health_check():
 @app.get("/api/health")
 async def api_health_check():
     return {"status": "ok"}
+
+
+@app.get("/api/health/db")
+async def db_health_check():
+    """Check database connectivity."""
+    if not engine:
+        return {"status": "error", "message": "Database not configured"}
+    
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "connected"}
+    except Exception as e:
+        return {"status": "error", "database": str(e)}
