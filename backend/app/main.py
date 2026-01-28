@@ -42,11 +42,20 @@ async def lifespan(app: FastAPI):
     # Initialize database
     if engine:
         try:
-            async with engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
+            import asyncio
+            # Add timeout to database initialization to catch pgBouncer hangs
+            async with asyncio.timeout(30):  # 30 second timeout
+                async with engine.begin() as conn:
+                    await conn.run_sync(Base.metadata.create_all)
             logger.info("✓ Database initialized successfully")
+        except asyncio.TimeoutError:
+            logger.error(f"✗ Database initialization TIMEOUT after 30 seconds")
+            logger.error("This usually means pgBouncer is not responding or DATABASE_URL is incorrect.")
+            logger.error(f"DATABASE_URL should use pooler.supabase.com:6543 for pgBouncer pooling")
+            raise RuntimeError("Database initialization timeout - check DATABASE_URL and pgBouncer status")
         except Exception as e:
             logger.error(f"✗ Database initialization error: {e}", exc_info=True)
+            logger.error(f"Make sure statement_cache_size=0 is set and DATABASE_URL is correct")
             raise
     else:
         logger.error("✗ Database engine not configured")
