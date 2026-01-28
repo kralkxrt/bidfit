@@ -39,24 +39,20 @@ async def lifespan(app: FastAPI):
     if not settings.OPENAI_API_KEY:
         logger.warning("WARNING: OPENAI_API_KEY not set. Embeddings will not work, but app will start.")
     
-    # Initialize database
+    # Test database connection but don't create schema during startup
+    # (Alembic migrations handle schema creation)
     if engine:
         try:
-            import asyncio
-            # Add timeout to database initialization to catch pgBouncer hangs
-            async with asyncio.timeout(30):  # 30 second timeout
-                async with engine.begin() as conn:
-                    await conn.run_sync(Base.metadata.create_all)
-            logger.info("✓ Database initialized successfully")
-        except asyncio.TimeoutError:
-            logger.error(f"✗ Database initialization TIMEOUT after 30 seconds")
-            logger.error("This usually means pgBouncer is not responding or DATABASE_URL is incorrect.")
-            logger.error(f"DATABASE_URL should use pooler.supabase.com:6543 for pgBouncer pooling")
-            raise RuntimeError("Database initialization timeout - check DATABASE_URL and pgBouncer status")
+            # Just test connectivity - don't hang on schema creation
+            logger.info("Testing database connection...")
+            async with engine.connect() as conn:
+                await conn.execute(text("SELECT 1"))
+            logger.info("✓ Database connection OK")
         except Exception as e:
-            logger.error(f"✗ Database initialization error: {e}", exc_info=True)
-            logger.error(f"Make sure statement_cache_size=0 is set and DATABASE_URL is correct")
-            raise
+            logger.error(f"✗ Database connection error: {e}", exc_info=True)
+            logger.error(f"Check DATABASE_URL is correct and pgBouncer is accessible")
+            # Don't raise - let app start anyway, queries will fail if DB is down
+            logger.warning("⚠ Continuing startup without database - queries will fail")
     else:
         logger.error("✗ Database engine not configured")
         raise RuntimeError("Database engine not initialized")
