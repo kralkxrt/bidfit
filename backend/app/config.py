@@ -19,8 +19,10 @@ class Settings(BaseSettings):
     
     @property
     def SQLALCHEMY_DATABASE_URL(self) -> str:
-        # Prefer direct connection if provided
-        url = self.DATABASE_URL_DIRECT or self.DATABASE_URL or ""
+        # Prefer direct connection only if it looks like a direct DB host
+        direct = (self.DATABASE_URL_DIRECT or "").strip()
+        base = (self.DATABASE_URL or "").strip()
+        url = direct if ("db." in direct or ":5432" in direct) else base
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
         return url
