@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 # Compute final database URL (respects DATABASE_URL_DIRECT override)
 database_url = settings.SQLALCHEMY_DATABASE_URL or ""
 if database_url.startswith("postgresql://"):
-    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
 elif database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
 
 # Log the database endpoint being used (without password)
 if database_url:
@@ -24,35 +24,27 @@ if database_url:
     else:
         logger.info(f"Database: {url_for_logging}")
 
-# Add required parameters for Supabase Pooler (PgBouncer)
+# Ensure SSL for hosted Postgres (Render/Supabase)
 if database_url:
-    # Remove any existing query params and rebuild
-    base_url = database_url.split("?")[0]
-    # Add required params: SSL + statement_cache_size=0 in URL
-    # (asyncpg reads this from URL during initial connection setup)
-    database_url = f"{base_url}?ssl=require&statement_cache_size=0"
+    if "?" in database_url:
+        if "sslmode=" not in database_url:
+            database_url += "&sslmode=require"
+    else:
+        database_url += "?sslmode=require"
 
 engine = None
 SessionLocal = None
 
 if database_url:
-    # CRITICAL: connect_args configuration for asyncpg with pgbouncer
-    # statement_cache_size=0 MUST be in connect_args, not URL parameters
+    # psycopg3 async dialect works well with PgBouncer; let PgBouncer handle pooling
     engine = create_async_engine(
         database_url,
         echo=settings.DEBUG,
         poolclass=NullPool,
-        # Disable SQLAlchemy's compiled statement cache to prevent prepared statements
-        # This is CRITICAL for pgBouncer compatibility
-        query_cache_size=0,
         connect_args={
-            "statement_cache_size": 0,  # CRITICAL: pgbouncer doesn't support prepared statements
-            "command_timeout": 10,
-            "server_settings": {"jit": "off"},
+            # Keep a conservative timeout; psycopg uses "connect_timeout" in seconds
+            "connect_timeout": 10,
         },
-        # Disable asyncpg JSON codec to prevent prepared statement registration
-        json_serializer=json_module.dumps,
-        json_deserializer=json_module.loads,
     )
     SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
