@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import NullPool
 from app.config import settings
 import logging
+import json as json_module
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +26,9 @@ if database_url:
 if database_url:
     # Remove any existing query params and rebuild
     base_url = database_url.split("?")[0]
-    # Add all required params: SSL + disable prepared statements in URL
-    database_url = f"{base_url}?ssl=require"
+    # Add required params: SSL + statement_cache_size=0 in URL
+    # (asyncpg reads this from URL during initial connection setup)
+    database_url = f"{base_url}?ssl=require&statement_cache_size=0"
 
 engine = None
 SessionLocal = None
@@ -42,7 +44,10 @@ if database_url:
             "statement_cache_size": 0,  # CRITICAL: pgbouncer doesn't support prepared statements
             "command_timeout": 10,
             "server_settings": {"jit": "off"},
-        }
+        },
+        # Disable asyncpg JSON codec to prevent prepared statement registration
+        json_serializer=json_module.dumps,
+        json_deserializer=json_module.loads,
     )
     SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
