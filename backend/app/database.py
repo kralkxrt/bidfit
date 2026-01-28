@@ -12,26 +12,23 @@ if database_url.startswith("postgresql://"):
 if database_url:
     # Remove any existing query params and rebuild
     base_url = database_url.split("?")[0]
-    # Add all required params: SSL + disable prepared statements
-    database_url = f"{base_url}?ssl=require&prepared_statement_cache_size=0"
+    # Add all required params: SSL + disable prepared statements in URL
+    database_url = f"{base_url}?ssl=require"
 
 engine = None
 SessionLocal = None
 
 if database_url:
-    # CRITICAL: connect_args configuration for asyncpg
-    # - statement_cache_size=0: REQUIRED for pgbouncer compatibility (Supabase default)
-    # - command_timeout: Prevent hanging connections
-    # - server_settings: Disable JIT to avoid prepared statement conflicts
+    # CRITICAL: connect_args configuration for asyncpg with pgbouncer
+    # statement_cache_size=0 MUST be in connect_args, not URL parameters
     engine = create_async_engine(
         database_url,
         echo=settings.DEBUG,
         poolclass=NullPool,
-        json_deserializer=lambda x: x,  # Disable JSON codec setup to avoid prepared statement errors
         connect_args={
             "statement_cache_size": 0,  # CRITICAL: pgbouncer doesn't support prepared statements
-            "command_timeout": 10,  # Prevent hanging connections
-            "server_settings": {"jit": "off"},  # Disable JIT to reduce prepared statement issues
+            "command_timeout": 10,
+            "server_settings": {"jit": "off"},
         }
     )
     SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
