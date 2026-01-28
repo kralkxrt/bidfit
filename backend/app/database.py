@@ -10,13 +10,23 @@ if database_url.startswith("postgresql://"):
 # Add SSL requirement for Supabase connections
 if database_url and "?" not in database_url:
     database_url += "?ssl=require"
+elif database_url and "ssl" not in database_url:
+    database_url += "&ssl=require"
 
-engine = create_async_engine(database_url, echo=settings.DEBUG) if database_url else None
+engine = None
+SessionLocal = None
 
-if engine:
+if database_url:
+    engine = create_async_engine(
+        database_url,
+        echo=settings.DEBUG,
+        # CRITICAL: Disable statement caching for PgBouncer compatibility
+        connect_args={
+            "statement_cache_size": 0,
+            "prepared_statement_cache_size": 0,
+        }
+    )
     SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-else:
-    SessionLocal = None
 
 Base = declarative_base()
 
