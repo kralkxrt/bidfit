@@ -1,7 +1,9 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import QueuePool
+from sqlalchemy import event
 from app.config import settings
+import json as json_module
 
 # Modify the URL for asyncpg if it doesn't already have it
 database_url = settings.DATABASE_URL or ""
@@ -13,7 +15,8 @@ if database_url:
     # Remove any existing query params and rebuild
     base_url = database_url.split("?")[0]
     # Add all required params: SSL + disable prepared statements in URL
-    database_url = f"{base_url}?ssl=require"
+    # PgBouncer in transaction/statement mode doesn't support prepared statements
+    database_url = f"{base_url}?ssl=require&statement_cache_size=0"
 
 engine = None
 SessionLocal = None
@@ -31,8 +34,16 @@ if database_url:
         connect_args={
             "statement_cache_size": 0,  # pgbouncer doesn't preserve prepared statements
             "command_timeout": 10,
-        }
+            "server_settings": {
+                "jit": "off",  # Disable JIT to avoid prepared statement issues
+            },
+        },
+        # Bypass asyncpg JSON codec setup to avoid DuplicatePreparedStatementError with pgbouncer
+        # Use standard json serialization/deserialization instead
+        json_serializer=json_module.dumps,
+        json_deserializer=json_module.loads,
     )
+    
     SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 Base = declarative_base()
