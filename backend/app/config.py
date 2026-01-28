@@ -4,6 +4,7 @@ Application configuration using Pydantic Settings.
 from pydantic_settings import BaseSettings
 from typing import List, Optional
 from functools import lru_cache
+import os
 
 
 class Settings(BaseSettings):
@@ -19,10 +20,11 @@ class Settings(BaseSettings):
     
     @property
     def SQLALCHEMY_DATABASE_URL(self) -> str:
-        # Prefer direct connection only if it looks like a direct DB host
+        # Prefer direct connection only when explicitly enabled
+        use_direct = (os.getenv("USE_DIRECT_DB", "false").lower() == "true")
         direct = (self.DATABASE_URL_DIRECT or "").strip()
         base = (self.DATABASE_URL or "").strip()
-        url = direct if ("db." in direct or ":5432" in direct) else base
+        url = direct if (use_direct and direct) else base
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
         return url
