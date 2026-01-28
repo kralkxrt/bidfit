@@ -15,12 +15,15 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: Optional[str] = None
+    DATABASE_URL_DIRECT: Optional[str] = None  # Optional override to bypass pgBouncer
     
     @property
     def SQLALCHEMY_DATABASE_URL(self) -> str:
-        if self.DATABASE_URL and self.DATABASE_URL.startswith("postgres://"):
-            return self.DATABASE_URL.replace("postgres://", "postgresql://", 1)
-        return self.DATABASE_URL or ""
+        # Prefer direct connection if provided
+        url = self.DATABASE_URL_DIRECT or self.DATABASE_URL or ""
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        return url
     DATABASE_POOL_SIZE: int = 5
     DATABASE_MAX_OVERFLOW: int = 10
 
