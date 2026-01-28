@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from app.config import settings
-from app.database import engine, Base
+from app.database import engine, Base, SessionLocal
 from app.api.routes import companies, documents, opportunities, analyses, roxy, profile, dashboard, company_profile, past_performance, compliance_matrix
 
 # Configure logging
@@ -141,10 +141,8 @@ async def db_health_check():
         return {"status": "error", "message": "Database not configured"}
     
     try:
-        async with engine.connect() as conn:
-            # Disable prepared statements at query level for pgBouncer compatibility
-            conn = conn.execution_options(compiled_cache=None)
-            await conn.execute(text("SELECT 1"))
+        async with SessionLocal() as session:
+            await session.execute(text("SELECT 1"))
         return {"status": "ok", "database": "connected"}
     except Exception as e:
         return {"status": "error", "database": str(e)}
