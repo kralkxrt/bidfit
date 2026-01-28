@@ -40,6 +40,9 @@ if database_url:
         database_url,
         echo=settings.DEBUG,
         poolclass=NullPool,
+        # Disable SQLAlchemy's compiled statement cache to prevent prepared statements
+        # This is CRITICAL for pgBouncer compatibility
+        query_cache_size=0,
         connect_args={
             "statement_cache_size": 0,  # CRITICAL: pgbouncer doesn't support prepared statements
             "command_timeout": 10,

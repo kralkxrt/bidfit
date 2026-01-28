@@ -142,6 +142,8 @@ async def db_health_check():
     
     try:
         async with engine.connect() as conn:
+            # Disable prepared statements at query level for pgBouncer compatibility
+            conn = conn.execution_options(compiled_cache=None)
             await conn.execute(text("SELECT 1"))
         return {"status": "ok", "database": "connected"}
     except Exception as e:
