@@ -20,6 +20,7 @@ SessionLocal = None
 
 if database_url:
     # CRITICAL: connect_args configuration for asyncpg
+    # - statement_cache_size=0: REQUIRED for pgbouncer compatibility (Supabase default)
     # - command_timeout: Prevent hanging connections
     # - server_settings: Disable JIT to avoid prepared statement conflicts
     engine = create_async_engine(
@@ -27,6 +28,7 @@ if database_url:
         echo=settings.DEBUG,
         poolclass=NullPool,
         connect_args={
+            "statement_cache_size": 0,  # CRITICAL: pgbouncer doesn't support prepared statements
             "command_timeout": 10,  # Prevent hanging connections
             "server_settings": {"jit": "off"},  # Disable JIT to reduce prepared statement issues
         }
