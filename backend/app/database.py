@@ -7,10 +7,12 @@ import json as json_module
 
 logger = logging.getLogger(__name__)
 
-# Modify the URL for asyncpg if it doesn't already have it
-database_url = settings.DATABASE_URL or ""
+# Compute final database URL (respects DATABASE_URL_DIRECT override)
+database_url = settings.SQLALCHEMY_DATABASE_URL or ""
 if database_url.startswith("postgresql://"):
     database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
 
 # Log the database endpoint being used (without password)
 if database_url:
