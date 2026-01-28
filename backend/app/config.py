@@ -20,11 +20,14 @@ class Settings(BaseSettings):
     
     @property
     def SQLALCHEMY_DATABASE_URL(self) -> str:
-        # Prefer direct connection only when explicitly enabled
-        use_direct = (os.getenv("USE_DIRECT_DB", "false").lower() == "true")
+        # If DATABASE_URL is a pooler URL, always prefer it (most stable in Render)
         direct = (self.DATABASE_URL_DIRECT or "").strip()
         base = (self.DATABASE_URL or "").strip()
-        url = direct if (use_direct and direct) else base
+        if "pooler." in base or ":6543" in base:
+            url = base
+        else:
+            use_direct = (os.getenv("USE_DIRECT_DB", "false").lower() == "true")
+            url = direct if (use_direct and direct) else base
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
         return url
