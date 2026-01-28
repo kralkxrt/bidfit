@@ -3,16 +3,25 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from app.config import settings
 
 # Modify the URL for asyncpg if it doesn't already have it
-database_url = settings.DATABASE_URL
+database_url = settings.DATABASE_URL or ""
 if database_url.startswith("postgresql://"):
     database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-engine = create_async_engine(database_url, echo=settings.DEBUG)
+# Add SSL requirement for Supabase connections
+if database_url and "?" not in database_url:
+    database_url += "?ssl=require"
 
-SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+engine = create_async_engine(database_url, echo=settings.DEBUG) if database_url else None
+
+if engine:
+    SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+else:
+    SessionLocal = None
 
 Base = declarative_base()
 
 async def get_db():
+    if not SessionLocal:
+        raise RuntimeError("Database engine not initialized. Set DATABASE_URL environment variable.")
     async with SessionLocal() as session:
         yield session
