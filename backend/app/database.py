@@ -19,15 +19,15 @@ engine = None
 SessionLocal = None
 
 if database_url:
-    # CRITICAL: connect_args configuration
-    # - json_deserializer=None: Disable JSON codec setup (causes conflicts in multi-worker)
-    # - server_settings: Disable other async codec setups
+    # CRITICAL: connect_args configuration for asyncpg
+    # - command_timeout: Prevent hanging connections
+    # - server_settings: Disable JIT to avoid prepared statement conflicts
     engine = create_async_engine(
         database_url,
         echo=settings.DEBUG,
         poolclass=NullPool,
         connect_args={
-            "json_deserializer": None,  # Disable asyncpg codec setup
+            "command_timeout": 10,  # Prevent hanging connections
             "server_settings": {"jit": "off"},  # Disable JIT to reduce prepared statement issues
         }
     )
