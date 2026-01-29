@@ -71,20 +71,22 @@ import os
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://bidwin-frontend.onrender.com",  # Production frontend
 ]
 
 frontend_url = os.getenv("FRONTEND_URL")
-if frontend_url:
+if frontend_url and frontend_url not in origins:
     origins.append(frontend_url)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"^https?://(localhost|127\\.0\\.0\\.1)(:\\d+)?$",
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^https://.*\.onrender\.com$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Global Exception Handlers
 @app.exception_handler(SQLAlchemyError)
