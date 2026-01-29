@@ -32,7 +32,11 @@ export function OrgSwitcher() {
                 {organizations.map((org) => (
                     <DropdownMenuItem
                         key={org.id}
-                        onClick={() => setCurrentOrg(org)}
+                        onClick={() => {
+                            setCurrentOrg(org);
+                            // Hard refresh to dashboard to clear stale data and load new org's data
+                            window.location.href = '/';
+                        }}
                         className="flex items-center justify-between"
                     >
                         <span>{org.name}</span>

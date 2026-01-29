@@ -58,6 +58,8 @@ const config: Config = {
 				},
 			},
 			fontFamily: {
+				display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+				body: ['var(--font-body)', 'Georgia', 'serif'],
 				sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
 				mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
 			},

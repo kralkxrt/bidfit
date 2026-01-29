@@ -16,6 +16,7 @@ import {
     ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BidWinLogoIcon } from "./BidWinLogo";
 
 const navItems = [
     { href: "/", icon: Home, label: "Dashboard" },
@@ -75,23 +76,28 @@ export function Sidebar() {
             {/* Header */}
             <div className={cn("flex items-center", isCollapsed ? "justify-center py-4" : "justify-between px-4 py-4")}>
                 {isCollapsed ? (
-                    <button
-                        type="button"
-                        onClick={toggleCollapsed}
-                        className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
-                        title="Expand sidebar"
-                    >
-                        <ChevronRight className="w-5 h-5" />
-                    </button>
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                            <BidWinLogoIcon className="w-6 h-6 text-white" />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={toggleCollapsed}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                            title="Expand sidebar"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 ) : (
                     <>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                             {/* Logo mark */}
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <span className="text-white font-bold text-lg">B</span>
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                                <BidWinLogoIcon className="w-6 h-6 text-white" />
                             </div>
                             {/* Wordmark */}
-                            <span className="text-xl font-bold">
+                            <span className="text-xl font-bold tracking-tight">
                                 <span className="text-white">Bid</span>
                                 <span className="text-blue-400">Win</span>
                             </span>
@@ -99,10 +105,10 @@ export function Sidebar() {
                         <button
                             type="button"
                             onClick={toggleCollapsed}
-                            className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-200 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
                             title="Collapse sidebar"
                         >
-                            <ChevronLeft className="w-5 h-5" />
+                            <ChevronLeft className="w-4 h-4" />
                         </button>
                     </>
                 )}
