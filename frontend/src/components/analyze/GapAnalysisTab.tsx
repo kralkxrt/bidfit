@@ -38,7 +38,7 @@ export function GapAnalysisTab({ opportunityId }: { opportunityId: string }) {
     }, [opportunityId]);
 
     return (
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 overflow-y-auto h-full">
             <ComplianceChecklistCard opportunityId={opportunityId} />
 
             <Card className="border-slate-200 shadow-sm">

@@ -85,7 +85,7 @@ export function ChatMessage({ message, onCitationClick, showTools = true }: Chat
                 </div>
             )}
 
-            <div className={cn("max-w-[85%] space-y-2", message.role === "user" ? "items-end flex flex-col" : "")}> 
+            <div className={cn("max-w-[85%] space-y-2", message.role === "user" ? "items-end flex flex-col" : "")}>
                 <div className="relative group">
                     {message.role === "assistant" && (
                         <div className="flex items-center gap-2 mb-1.5 ml-1">
@@ -95,7 +95,7 @@ export function ChatMessage({ message, onCitationClick, showTools = true }: Chat
 
                     <div
                         className={cn(
-                            "p-4 rounded-2xl text-[15px] leading-relaxed whitespace-pre-wrap shadow-sm relative",
+                            "p-4 rounded-2xl text-[15px] leading-relaxed whitespace-pre-line shadow-sm relative",
                             message.role === "user"
                                 ? "bg-slate-100 text-slate-700 rounded-br-sm"
                                 : "bg-gradient-to-br from-indigo-50/50 to-purple-50/30 border border-indigo-100 text-slate-800 rounded-bl-sm"

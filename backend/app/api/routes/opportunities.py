@@ -539,7 +539,32 @@ async def list_opportunity_documents(
         .order_by(desc(OpportunityDocument.created_at))
     )
     result = await db.execute(query)
-    return result.scalars().all()
+    docs = result.scalars().all()
+    
+    # Generate signed URLs for each document
+    storage = StorageService()
+    response_docs = []
+    for doc in docs:
+        doc_dict = {
+            "id": doc.id,
+            "opportunity_id": doc.opportunity_id,
+            "document_type": doc.document_type,
+            "filename": doc.filename,
+            "processing_status": doc.processing_status,
+            "parsed_requirements": doc.parsed_requirements,
+            "processed_at": doc.processed_at,
+            "created_at": doc.created_at,
+            "file_url": None
+        }
+        # Generate signed URL if file_path exists
+        if doc.file_path and not doc.file_path.startswith("manual://"):
+            try:
+                doc_dict["file_url"] = await storage.get_signed_url(doc.file_path)
+            except Exception as e:
+                print(f"Failed to generate signed URL for {doc.file_path}: {e}")
+        response_docs.append(OpportunityDocumentResponse(**doc_dict))
+    
+    return response_docs
 
 @router.delete("/{opp_id}/documents/{doc_id}")
 async def delete_opportunity_document(

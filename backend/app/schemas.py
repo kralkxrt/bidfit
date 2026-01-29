@@ -55,6 +55,7 @@ class OpportunityDocumentResponse(BaseModel):
     document_type: str
     filename: str
     processing_status: str
+    file_url: Optional[str] = None  # Signed URL for document access
     parsed_requirements: Optional[Dict[str, Any]] = None
     processed_at: Optional[datetime] = None
     created_at: datetime

@@ -29,7 +29,7 @@ export function SummaryTab({ opportunityId }: { opportunityId: string }) {
     }, [opportunityId]);
 
     return (
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 overflow-y-auto h-full">
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                 <h2 className="text-xl font-semibold text-slate-900 mb-2">
                     {opportunity?.title || "Opportunity Summary"}

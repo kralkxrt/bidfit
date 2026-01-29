@@ -126,7 +126,8 @@ async def bulk_delete_documents(
 async def list_documents(
     org_id: UUID = Depends(require_org_id),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    storage: StorageService = Depends(get_storage_service)
 ):
     """
     List documents. If company_id is provided, filter by company. Otherwise return all.
@@ -141,4 +142,25 @@ async def list_documents(
     query = query.order_by(Document.created_at.desc())
     result = await db.execute(query)
     documents = result.scalars().all()
-    return documents
+    
+    # Generate signed URLs for each document
+    response_docs = []
+    for doc in documents:
+        doc_dict = {
+            "id": str(doc.id),
+            "filename": doc.filename,
+            "document_type": doc.document_type,
+            "file_path": doc.file_path,
+            "file_url": None,
+            "processed_at": doc.processed_at.isoformat() if doc.processed_at else None,
+            "created_at": doc.created_at.isoformat() if doc.created_at else None,
+        }
+        # Generate signed URL if file_path exists
+        if doc.file_path and not doc.file_path.startswith("manual://"):
+            try:
+                doc_dict["file_url"] = await storage.get_signed_url(doc.file_path)
+            except Exception as e:
+                print(f"Failed to generate signed URL for {doc.file_path}: {e}")
+        response_docs.append(doc_dict)
+    
+    return response_docs

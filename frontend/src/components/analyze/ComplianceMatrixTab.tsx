@@ -185,7 +185,7 @@ export function ComplianceMatrixTab({ opportunityId }: { opportunityId: string }
     }, [loading]);
 
     return (
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 overflow-y-auto h-full">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                     <h2 className="text-lg font-semibold text-slate-900">Compliance Matrix</h2>
