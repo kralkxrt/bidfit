@@ -45,9 +45,17 @@ class StorageService:
         """
         Get a signed URL for viewing the file.
         """
-        res = self.supabase.storage.from_(self.bucket).create_signed_url(
-            path, expiry_seconds
-        )
-        # res is typically {'signedURL': '...'} or object
-        # Supabase-py v2 might satisfy directly
-        return res['signedURL']
+        try:
+            res = self.supabase.storage.from_(self.bucket).create_signed_url(
+                path, expiry_seconds
+            )
+            # Handle both Supabase v1 and v2 response formats
+            if isinstance(res, dict):
+                return res.get('signedURL') or res.get('signedUrl') or res.get('signed_url', '')
+            # For newer versions that return an object
+            if hasattr(res, 'signed_url'):
+                return res.signed_url
+            return str(res) if res else ''
+        except Exception as e:
+            print(f"Error getting signed URL for {path}: {e}")
+            return ''
