@@ -3,18 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { TypewriterText } from "@/components/roxy/TypewriterText";
 
-function QuickPromptChip({ label, onClick }: { label: string; onClick?: () => void }) {
-    return (
-        <button
-            onClick={onClick}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-full text-sm text-slate-700 transition-colors"
-            type="button"
-        >
-            {label}
-        </button>
-    );
-}
-
 function RoxyIcon() {
     return (
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/25 mb-6 relative overflow-hidden">
@@ -32,11 +20,7 @@ function RoxyIcon() {
     );
 }
 
-export function WelcomeScreen({
-    onPromptClick,
-}: {
-    onPromptClick?: (prompt: string) => void;
-}) {
+export function WelcomeScreen() {
     const greetings = useMemo(
         () => [
             "What are we winning today?",
@@ -54,31 +38,20 @@ export function WelcomeScreen({
         setGreeting(greetings[Math.floor(Math.random() * greetings.length)]);
     }, [greetings]);
 
-    const quickPrompts = useMemo(
-        () => [
-            "What certifications are required?",
-            "What's the evaluation criteria?",
-            "Should we bid on this?",
-            "What past performance is needed?",
-        ],
-        []
-    );
-
     return (
         <div className="flex flex-col items-center justify-center h-full text-center p-8">
             <RoxyIcon />
 
             <h2 className="text-2xl font-bold text-slate-900 mb-1">Roxy</h2>
 
-            <p className="text-slate-500 text-lg h-8 mb-10">
+            <p className="text-slate-500 text-lg h-8 mb-4">
                 <TypewriterText text={greeting} speed={35} delay={400} />
             </p>
 
-            <div className="flex flex-wrap gap-3 justify-center max-w-lg">
-                {quickPrompts.map((prompt) => (
-                    <QuickPromptChip key={prompt} label={prompt} onClick={() => onPromptClick?.(prompt)} />
-                ))}
-            </div>
+            <p className="text-sm text-slate-400">
+                Use the quick prompts below to get started
+            </p>
         </div>
     );
 }
+

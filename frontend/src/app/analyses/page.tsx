@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { FileText, ArrowRight, Trash2, Loader2 } from "lucide-react";
-import { useCompanyStore } from "@/store/useCompanyStore";
+import { useOrgStore } from "@/lib/stores/orgStore";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
@@ -33,7 +33,7 @@ interface AnalysisWithOpportunity extends Analysis {
 
 export default function AnalysesPage() {
     const router = useRouter();
-    const { selectedCompanyId } = useCompanyStore();
+    const { currentOrg } = useOrgStore();
     const [analyses, setAnalyses] = useState<AnalysisWithOpportunity[]>([]);
     const [loading, setLoading] = useState(true);
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -42,20 +42,18 @@ export default function AnalysesPage() {
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
     useEffect(() => {
-        if (selectedCompanyId) {
+        if (currentOrg?.id) {
             fetchAnalyses();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedCompanyId]);
+    }, [currentOrg?.id]);
 
     const fetchAnalyses = async () => {
+        if (!currentOrg?.id) return;
         try {
             setLoading(true);
-            // Fetch all analyses (filtered by selected company)
-            const params = selectedCompanyId && selectedCompanyId !== 'all'
-                ? `?company_id=${selectedCompanyId}`
-                : '';
-            const res = await api.get(`/api/analyses/${params}`);
+            // Fetch analyses - backend filters by org_id from header
+            const res = await api.get('/api/analyses');
 
             // Fetch opportunity details for each analysis
             const analysesWithOpps = await Promise.all(
@@ -215,100 +213,100 @@ export default function AnalysesPage() {
                         {analyses.length} {analyses.length === 1 ? "analysis" : "analyses"} found
                     </div>
                 </div>
-                    {loading ? (
-                        <div className="py-10 text-center text-slate-500">Loading...</div>
-                    ) : analyses.length === 0 ? (
-                        <div className="py-10 text-center">
-                            <FileText className="mx-auto h-12 w-12 text-slate-400 mb-4" />
-                            <h3 className="text-lg font-semibold mb-2 text-slate-900">No analyses yet</h3>
-                            <p className="text-sm text-slate-500 mb-4">
-                                Run your first gap analysis to see results here.
-                            </p>
-                            <Button onClick={() => router.push("/opportunities")}>
-                                Go to Opportunities
-                            </Button>
-                        </div>
-                    ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[40px]">
+                {loading ? (
+                    <div className="py-10 text-center text-slate-500">Loading...</div>
+                ) : analyses.length === 0 ? (
+                    <div className="py-10 text-center">
+                        <FileText className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+                        <h3 className="text-lg font-semibold mb-2 text-slate-900">No analyses yet</h3>
+                        <p className="text-sm text-slate-500 mb-4">
+                            Run your first gap analysis to see results here.
+                        </p>
+                        <Button onClick={() => router.push("/opportunities")}>
+                            Go to Opportunities
+                        </Button>
+                    </div>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[40px]">
+                                    <input
+                                        type="checkbox"
+                                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        checked={analyses.length > 0 && selectedIds.length === analyses.length}
+                                        onChange={(e) => handleSelectAll(e.target.checked)}
+                                    />
+                                </TableHead>
+                                <TableHead>Opportunity</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Overall Score</TableHead>
+                                <TableHead>Recommendation</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {analyses.map((analysis) => (
+                                <TableRow
+                                    key={analysis.id}
+                                    className="cursor-pointer hover:bg-slate-50 transition-colors"
+                                    data-state={selectedIds.includes(analysis.id) ? "selected" : undefined}
+                                    onClick={() =>
+                                        router.push(
+                                            `/opportunities/${analysis.opportunity_id}/analysis/${analysis.id}`
+                                        )
+                                    }
+                                >
+                                    <TableCell>
                                         <input
                                             type="checkbox"
                                             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            checked={analyses.length > 0 && selectedIds.length === analyses.length}
-                                            onChange={(e) => handleSelectAll(e.target.checked)}
+                                            checked={selectedIds.includes(analysis.id)}
+                                            onChange={(e) => handleSelectOne(analysis.id, e.target.checked)}
+                                            onClick={(e) => e.stopPropagation()}
                                         />
-                                    </TableHead>
-                                    <TableHead>Opportunity</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Overall Score</TableHead>
-                                    <TableHead>Recommendation</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                        <div className="flex items-center space-x-2">
+                                            <FileText className="h-4 w-4 text-slate-400" />
+                                            <div>
+                                                <div className="text-slate-900">{analysis.opportunity_title}</div>
+                                                {analysis.opportunity_solicitation && (
+                                                    <div className="text-xs text-slate-500">
+                                                        {analysis.opportunity_solicitation}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {format(new Date(analysis.created_at), "MMM d, yyyy")}
+                                    </TableCell>
+                                    <TableCell>{getScoreBadge(analysis.overall_relevance_score)}</TableCell>
+                                    <TableCell>{getGoNoGoBadge(analysis.go_no_go_recommendation)}</TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <Button variant="ghost" size="sm">
+                                                View <ArrowRight className="ml-2 h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteId(analysis.id);
+                                                }}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {analyses.map((analysis) => (
-                                    <TableRow
-                                        key={analysis.id}
-                                        className="cursor-pointer hover:bg-slate-50 transition-colors"
-                                        data-state={selectedIds.includes(analysis.id) ? "selected" : undefined}
-                                        onClick={() =>
-                                            router.push(
-                                                `/opportunities/${analysis.opportunity_id}/analysis/${analysis.id}`
-                                            )
-                                        }
-                                    >
-                                        <TableCell>
-                                            <input
-                                                type="checkbox"
-                                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                checked={selectedIds.includes(analysis.id)}
-                                                onChange={(e) => handleSelectOne(analysis.id, e.target.checked)}
-                                                onClick={(e) => e.stopPropagation()}
-                                            />
-                                        </TableCell>
-                                        <TableCell className="font-medium">
-                                            <div className="flex items-center space-x-2">
-                                                <FileText className="h-4 w-4 text-slate-400" />
-                                                <div>
-                                                    <div className="text-slate-900">{analysis.opportunity_title}</div>
-                                                    {analysis.opportunity_solicitation && (
-                                                        <div className="text-xs text-slate-500">
-                                                            {analysis.opportunity_solicitation}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            {format(new Date(analysis.created_at), "MMM d, yyyy")}
-                                        </TableCell>
-                                        <TableCell>{getScoreBadge(analysis.overall_relevance_score)}</TableCell>
-                                        <TableCell>{getGoNoGoBadge(analysis.go_no_go_recommendation)}</TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Button variant="ghost" size="sm">
-                                                    View <ArrowRight className="ml-2 h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-gray-400 hover:text-red-600 hover:bg-red-50"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setDeleteId(analysis.id);
-                                                    }}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    )}
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
             </div>
 
             <DeleteConfirmDialog

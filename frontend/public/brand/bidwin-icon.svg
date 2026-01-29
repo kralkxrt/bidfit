@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bidwin-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <!-- B letterform with integrated upward arrow -->
+  <path d="M16 8h16c8.837 0 16 7.163 16 16 0 4.5-1.87 8.566-4.879 11.465C46.25 38.214 48 42.352 48 47c0 9.389-7.611 17-17 17H16c-2.209 0-4-1.791-4-4V12c0-2.209 1.791-4 4-4z" fill="url(#bidwin-gradient)"/>
+  <!-- Arrow cutout going up -->
+  <path d="M22 28L32 12L42 28H36V40H28V28H22Z" fill="white"/>
+  <!-- B bowl hints -->
+  <ellipse cx="34" cy="52" rx="6" ry="5" fill="white" opacity="0.15"/>
+</svg>

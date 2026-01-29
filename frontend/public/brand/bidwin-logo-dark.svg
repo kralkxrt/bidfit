@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 64" fill="none">
+  <defs>
+    <linearGradient id="bidwin-gradient-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Icon: B with upward arrow -->
+  <g>
+    <path d="M8 4h12c6.627 0 12 5.373 12 12 0 3.375-1.403 6.424-3.659 8.599C30.687 26.66 32 29.764 32 33.25c0 7.042-5.708 12.75-12.75 12.75H8c-1.657 0-3-1.343-3-3V7c0-1.657 1.343-3 3-3z" fill="url(#bidwin-gradient-dark)"/>
+    <path d="M11.5 19L18.5 6L25.5 19H21.5V28.5H15.5V19H11.5Z" fill="white"/>
+    <ellipse cx="19.5" cy="37" rx="4.5" ry="3.75" fill="white" opacity="0.15"/>
+  </g>
+  
+  <!-- Wordmark: BidWin (for dark backgrounds) -->
+  <text x="44" y="39" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="32" font-weight="700" letter-spacing="-1">
+    <tspan fill="#FFFFFF">Bid</tspan><tspan fill="#60A5FA">Win</tspan>
+  </text>
+</svg>

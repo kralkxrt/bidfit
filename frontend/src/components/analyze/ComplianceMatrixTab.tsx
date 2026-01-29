@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Bot, Plus, Trash2 } from "lucide-react";
 import api from "@/lib/api";
+import { toast } from "react-hot-toast";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import {
     Table,
@@ -55,7 +57,7 @@ const STATUS_BADGE_CLASSES: Record<ResponseStatus, string> = {
 
 export function ComplianceMatrixTab({ opportunityId }: { opportunityId: string }) {
     const [items, setItems] = useState<ComplianceMatrixItem[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -120,9 +122,11 @@ export function ComplianceMatrixTab({ opportunityId }: { opportunityId: string }
             setIsAddOpen(false);
             resetAddForm();
             await fetchItems();
+            toast.success("Item added to compliance matrix");
         } catch (err) {
             console.error("Failed to add compliance matrix item", err);
             setError("Failed to add item.");
+            toast.error("Failed to add item");
         } finally {
             setSaving(false);
         }
@@ -131,13 +135,17 @@ export function ComplianceMatrixTab({ opportunityId }: { opportunityId: string }
     const handleAutoGenerate = async () => {
         setSaving(true);
         setError(null);
+        const toastId = toast.loading("Auto-generating compliance matrix...");
         try {
             await api.post(`/api/opportunities/${opportunityId}/compliance-matrix/generate`);
             await fetchItems();
+            toast.success("Compliance matrix generated!");
         } catch (err) {
             console.error("Failed to auto-generate compliance matrix", err);
             setError("Auto-generate failed.");
+            toast.error("Auto-generation failed");
         } finally {
+            toast.dismiss(toastId);
             setSaving(false);
         }
     };
@@ -152,9 +160,11 @@ export function ComplianceMatrixTab({ opportunityId }: { opportunityId: string }
                 `/api/opportunities/${opportunityId}/compliance-matrix/${item.id}`,
                 { response_status: status }
             );
+            toast.success("Status updated");
         } catch (err) {
             console.error("Failed to update compliance matrix item", err);
             setError("Failed to update status.");
+            toast.error("Failed to update status");
             await fetchItems();
         }
     };
@@ -167,9 +177,11 @@ export function ComplianceMatrixTab({ opportunityId }: { opportunityId: string }
                 `/api/opportunities/${opportunityId}/compliance-matrix/${item.id}`
             );
             setItems((prev) => prev.filter((x) => x.id !== item.id));
+            toast.success("Item deleted");
         } catch (err) {
             console.error("Failed to delete compliance matrix item", err);
             setError("Failed to delete item.");
+            toast.error("Failed to delete item");
         } finally {
             setSaving(false);
         }
@@ -177,12 +189,7 @@ export function ComplianceMatrixTab({ opportunityId }: { opportunityId: string }
 
     const hasItems = items.length > 0;
 
-    const emptyState = useMemo(() => {
-        if (loading) {
-            return "Loading compliance matrix…";
-        }
-        return "No compliance matrix items yet. Add an item or auto-generate from uploaded RFP documents.";
-    }, [loading]);
+    // const emptyState deleted
 
     return (
         <div className="p-6 space-y-4 overflow-y-auto h-full">
@@ -303,10 +310,13 @@ export function ComplianceMatrixTab({ opportunityId }: { opportunityId: string }
                 </Table>
 
                 {!hasItems && (
-                    <div className="p-12 text-center text-slate-500">
-                        <p className="text-base font-semibold text-slate-900">Compliance Matrix</p>
-                        <p className="text-sm mt-1">{emptyState}</p>
-                    </div>
+                    <EmptyState
+                        icon="clipboard"
+                        title="No compliance items yet"
+                        description="Add an item manually or upload an RFP document and to auto-generate."
+                        action={{ label: "Auto-Generate", onClick: handleAutoGenerate }}
+                        className="py-16"
+                    />
                 )}
             </div>
 

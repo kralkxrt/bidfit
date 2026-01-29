@@ -10,12 +10,41 @@ import { DocumentsTab } from "@/components/documents/DocumentsTab";
 import { GapAnalysisTab } from "@/components/analyze/GapAnalysisTab";
 import { ComplianceMatrixTab } from "@/components/analyze/ComplianceMatrixTab";
 import type { Citation } from "@/lib/roxyApi";
+import api from "@/lib/api";
+import { useEffect } from "react";
 
 export default function OpportunityAnalyzePage() {
     const params = useParams();
     const opportunityId = params.id as string;
     const [activeTab, setActiveTab] = useState("summary");
     const [highlightedCitation, setHighlightedCitation] = useState<Citation | null>(null);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [opportunity, setOpportunity] = useState<any>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [documents, setDocuments] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                const [oppRes, docsRes] = await Promise.all([
+                    api.get(`/api/opportunities/${opportunityId}`),
+                    api.get(`/api/opportunities/${opportunityId}/documents`)
+                ]);
+                setOpportunity(oppRes.data);
+                setDocuments(docsRes.data || []);
+            } catch (error) {
+                console.error("Failed to load opportunity data", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (opportunityId) {
+            void fetchData();
+        }
+    }, [opportunityId]);
 
     const handleCitationClick = (citation: Citation) => {
         setHighlightedCitation(citation);
@@ -31,6 +60,8 @@ export default function OpportunityAnalyzePage() {
     );
 
     const roxyTab = activeTab === "documents" ? "documents" : activeTab === "gap-analysis" ? "analysis" : "requirements";
+
+    const gapAnalysisStatus = opportunity?.latest_analysis ? "complete" : "pending";
 
     return (
         <div className="flex flex-col h-full p-6">
@@ -52,12 +83,22 @@ export default function OpportunityAnalyzePage() {
                                     className="px-4 py-3 text-sm font-medium text-slate-500 data-[state=active]:text-blue-600 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none bg-transparent"
                                 >
                                     Documents
+                                    {!loading && documents.length > 0 && (
+                                        <span className="ml-2 bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">
+                                            {documents.length}
+                                        </span>
+                                    )}
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value="gap-analysis"
                                     className="px-4 py-3 text-sm font-medium text-slate-500 data-[state=active]:text-blue-600 data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none bg-transparent"
                                 >
                                     Gap Analysis
+                                    {!loading && (
+                                        <span className="ml-2">
+                                            {gapAnalysisStatus === "complete" ? "✓" : "⚠"}
+                                        </span>
+                                    )}
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value="compliance-matrix"
@@ -77,11 +118,15 @@ export default function OpportunityAnalyzePage() {
                                         opportunityId={opportunityId}
                                         highlightedCitation={highlightedCitation}
                                         onClearHighlight={() => setHighlightedCitation(null)}
+                                        opportunityDocuments={documents}
                                     />
                                 </TabsContent>
 
                                 <TabsContent value="gap-analysis" className="h-full m-0">
-                                    <GapAnalysisTab opportunityId={opportunityId} />
+                                    <GapAnalysisTab
+                                        opportunityId={opportunityId}
+                                        initialAnalysis={opportunity?.latest_analysis}
+                                    />
                                 </TabsContent>
 
                                 <TabsContent value="compliance-matrix" className="h-full m-0">
@@ -97,7 +142,7 @@ export default function OpportunityAnalyzePage() {
                             currentTab={roxyTab}
                             onCitationClick={handleCitationClick}
                             isMinimized={false}
-                            onToggleMinimize={() => {}}
+                            onToggleMinimize={() => { }}
                             highlightedCitation={highlightedCitation}
                             allowMinimize={false}
                             layout="full"

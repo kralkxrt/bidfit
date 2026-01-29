@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Opportunity } from '@/types/opportunity';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface OpportunityCardProps {
     opportunity: Opportunity;
@@ -28,6 +29,7 @@ export function OpportunityCard({
     onHide,
     onToggleFavorite
 }: OpportunityCardProps) {
+    const router = useRouter();
     const [showMenu, setShowMenu] = useState(false);
     const [showHideModal, setShowHideModal] = useState(false);
 
@@ -66,10 +68,21 @@ export function OpportunityCard({
         return `$${dollars.toFixed(0)}`;
     };
 
+    // Navigate to opportunity on card click
+    const handleCardClick = (e: React.MouseEvent) => {
+        // Don't navigate if clicking on interactive elements
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || target.closest('a')) {
+            return;
+        }
+        router.push(`/opportunities/${opportunity.id}`);
+    };
+
     return (
         <>
             <div
-                className={`bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all ${isDragging ? 'shadow-lg rotate-2 scale-105' : ''
+                onClick={handleCardClick}
+                className={`bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all cursor-pointer ${isDragging ? 'shadow-lg rotate-2 scale-105' : ''
                     }`}
             >
                 {/* Card Header */}

@@ -10,44 +10,44 @@ import type { Citation } from "@/lib/roxyApi";
 import { ChatMessage } from "@/components/roxy/ChatMessage";
 import { ThinkingIndicator } from "@/components/roxy/ThinkingIndicator";
 import { WelcomeScreen } from "@/components/roxy/WelcomeScreen";
- 
- export interface RoxySidePanelProps {
-     opportunityId: string;
-     currentTab: "requirements" | "documents" | "analysis";
-     onCitationClick: (citation: Citation) => void;
-     isMinimized: boolean;
-     onToggleMinimize: () => void;
+
+export interface RoxySidePanelProps {
+    opportunityId: string;
+    currentTab: "requirements" | "documents" | "analysis";
+    onCitationClick: (citation: Citation) => void;
+    isMinimized: boolean;
+    onToggleMinimize: () => void;
     highlightedCitation?: Citation | null;
     externalPrompt?: string | null;
     onPromptHandled?: () => void;
     allowMinimize?: boolean;
     layout?: "widget" | "full";
- }
- 
- export function RoxySidePanel({
-     opportunityId,
-     currentTab,
-     onCitationClick,
-     isMinimized,
-     onToggleMinimize,
+}
+
+export function RoxySidePanel({
+    opportunityId,
+    currentTab,
+    onCitationClick,
+    isMinimized,
+    onToggleMinimize,
     highlightedCitation,
     externalPrompt,
     onPromptHandled,
     allowMinimize = true,
     layout = "widget",
- }: RoxySidePanelProps) {
-     const [inputValue, setInputValue] = useState("");
-     const [unreadCount, setUnreadCount] = useState(0);
-     const listRef = useRef<HTMLDivElement>(null);
+}: RoxySidePanelProps) {
+    const [inputValue, setInputValue] = useState("");
+    const [unreadCount, setUnreadCount] = useState(0);
+    const listRef = useRef<HTMLDivElement>(null);
     const previousMessageCount = useRef(0);
     const { messages, isLoading, error, sendMessage } = useRoxyChat(opportunityId);
- 
-     useEffect(() => {
-         if (!isMinimized) {
-             setUnreadCount(0);
-         }
-     }, [isMinimized]);
- 
+
+    useEffect(() => {
+        if (!isMinimized) {
+            setUnreadCount(0);
+        }
+    }, [isMinimized]);
+
     useEffect(() => {
         if (!isMinimized) {
             previousMessageCount.current = messages.length;
@@ -64,10 +64,10 @@ import { WelcomeScreen } from "@/components/roxy/WelcomeScreen";
         previousMessageCount.current = messages.length;
     }, [isMinimized, messages]);
 
-     useEffect(() => {
-         if (!listRef.current) return;
-         listRef.current.scrollTop = listRef.current.scrollHeight;
-     }, [messages, isLoading]);
+    useEffect(() => {
+        if (!listRef.current) return;
+        listRef.current.scrollTop = listRef.current.scrollHeight;
+    }, [messages, isLoading]);
 
     useEffect(() => {
         if (!externalPrompt || isLoading) return;
@@ -80,14 +80,14 @@ import { WelcomeScreen } from "@/components/roxy/WelcomeScreen";
             onToggleMinimize();
         }
     }, [currentTab, externalPrompt, isLoading, onPromptHandled, onToggleMinimize, sendMessage, isMinimized]);
- 
+
 
     const handleSendMessage = async (message?: string) => {
         const trimmed = (message ?? inputValue).trim();
-         if (!trimmed || isLoading) return;
-         setInputValue("");
+        if (!trimmed || isLoading) return;
+        setInputValue("");
         await sendMessage(trimmed, { currentTab });
-     };
+    };
 
     const quickQuestions = [
         "What certifications are required?",
@@ -101,23 +101,23 @@ import { WelcomeScreen } from "@/components/roxy/WelcomeScreen";
         setInputValue("");
         await sendMessage(question, { currentTab });
     };
- 
+
     if (isMinimized && allowMinimize) {
-         return (
-             <button
-                 onClick={onToggleMinimize}
+        return (
+            <button
+                onClick={onToggleMinimize}
                 className="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/25 relative"
-             >
+            >
                 <span className="text-lg font-bold text-white">R</span>
                 {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
                         {unreadCount}
                     </span>
                 )}
-             </button>
-         );
-     }
- 
+            </button>
+        );
+    }
+
     return (
         <aside className={layout === "full" ? "flex flex-col h-full w-full" : "w-full lg:w-96 flex-shrink-0"}>
             <div
@@ -162,7 +162,7 @@ import { WelcomeScreen } from "@/components/roxy/WelcomeScreen";
 
                 <div ref={listRef} className={cn("flex-1 overflow-y-auto p-4 space-y-4", layout === "full" ? "bg-white" : "")}>
                     {messages.length === 0 && !isLoading ? (
-                        <WelcomeScreen onPromptClick={handleSendMessage} />
+                        <WelcomeScreen />
                     ) : (
                         messages.map((message) => (
                             <ChatMessage

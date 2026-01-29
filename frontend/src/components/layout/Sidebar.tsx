@@ -16,7 +16,7 @@ import {
     ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { BidWinLogoIcon } from "./BidWinLogo";
+import { BidWinLogoIcon, BidWinLogo } from "./BidWinLogo";
 
 const navItems = [
     { href: "/", icon: Home, label: "Dashboard" },
@@ -91,16 +91,8 @@ export function Sidebar() {
                     </div>
                 ) : (
                     <>
-                        <div className="flex items-center gap-3">
-                            {/* Logo mark */}
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                                <BidWinLogoIcon className="w-6 h-6 text-white" />
-                            </div>
-                            {/* Wordmark */}
-                            <span className="text-xl font-bold tracking-tight">
-                                <span className="text-white">Bid</span>
-                                <span className="text-blue-400">Win</span>
-                            </span>
+                        <div className="flex items-center px-2">
+                            <BidWinLogo className="h-10 w-auto" variant="dark" />
                         </div>
                         <button
                             type="button"

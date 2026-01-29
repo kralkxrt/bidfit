@@ -4,12 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
-import { Hexagon } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
+import { BidWinLogo } from "@/components/layout/BidWinLogo";
 
 export default function LoginPage() {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -20,17 +19,18 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
+            // Demoware/MVP login - accepts any input for now
             const res = await fetch("/api/auth", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({}),
             });
 
             if (res.ok) {
                 router.push("/");
                 router.refresh();
             } else {
-                setError("Incorrect password");
+                setError("Failed to enter");
             }
         } catch {
             setError("Something went wrong");
@@ -40,59 +40,85 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-            <Card className="w-full max-w-md shadow-lg border-slate-200">
-                <CardHeader className="space-y-1 text-center">
-                    <div className="mb-8 flex flex-col items-center">
-                        <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 mb-6 group-hover:scale-105 transition-transform duration-300">
-                            <Hexagon className="w-8 h-8 text-white fill-white" />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+            <Card className="w-full max-w-md shadow-xl border-slate-200/60 bg-white/80 backdrop-blur-sm">
+                <CardHeader className="space-y-2 text-center pb-8 pt-8">
+                    <div className="flex flex-col items-center">
+                        <div className="mb-6 group-hover:scale-105 transition-transform duration-300">
+                            <BidWinLogo className="h-16 w-auto" />
                         </div>
-                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                            Bid<span className="text-blue-600">Match</span>
-                        </h1>
+                        <p className="text-slate-500 font-medium text-sm mt-2 max-w-xs mx-auto">
+                            AI-Powered RFP Analysis for Government Contractors
+                        </p>
                     </div>
-                    <CardDescription>
-                        Enter the secure password to continue
-                    </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Input
-                                type="text"
-                                placeholder="Username"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                className="h-11"
-                                autoFocus
-                            />
-                            <Input
-                                type="password"
-                                placeholder="Password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="h-11"
-                            />
-                            {error && (
-                                <p className="text-sm text-red-500 font-medium">{error}</p>
-                            )}
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="name@company.com"
+                                    className="h-11 bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <LinkRow label="Password" href="#" />
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    className="h-11 bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                                />
+                            </div>
                         </div>
+
+                        {error && (
+                            <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium border border-red-100 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 flex-shrink-0">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                {error}
+                            </div>
+                        )}
+
                         <Button
                             type="submit"
-                            className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                            className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base shadow-md shadow-blue-600/10 transition-all hover:shadow-lg hover:shadow-blue-600/20"
                             disabled={loading}
                         >
-                            {loading ? "Verifying..." : "Unlock Dashboard"}
+                            {loading ? "Signing in..." : "Sign in to Dashboard"}
                         </Button>
-                        <div className="text-center pt-2">
-                            <a href="/how-it-works" className="text-lg text-slate-500 hover:text-blue-600 font-medium transition-colors">
-                                How it works?
-                            </a>
-                        </div>
                     </form>
                 </CardContent>
-
+                <CardFooter className="flex flex-col items-center gap-4 pt-2 pb-8 border-t border-slate-100 mt-2">
+                    <p className="text-sm text-slate-500">
+                        Don&apos;t have an account?{" "}
+                        <a href="#" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                            Contact Sales
+                        </a>
+                    </p>
+                    <div className="text-xs text-slate-400 font-mono">
+                        v1.0.2
+                    </div>
+                </CardFooter>
             </Card>
+        </div>
+    );
+}
+
+function LinkRow({ label, href }: { label: string; href: string }) {
+    return (
+        <div className="flex items-center justify-between">
+            <Label htmlFor="password">{label}</Label>
+            <a
+                href={href}
+                className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            >
+                Forgot password?
+            </a>
         </div>
     );
 }

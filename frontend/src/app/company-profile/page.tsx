@@ -2,6 +2,7 @@
 
 import React, { useCallback, useMemo, useState, type ReactNode } from "react";
 import { CheckCircle2, Circle, Pencil, Save } from "lucide-react";
+import { toast } from "react-hot-toast";
 import api from "@/lib/api";
 import { useOrgStore } from "@/lib/stores/orgStore";
 import { Button } from "@/components/ui/button";
@@ -286,9 +287,11 @@ export default function CompanyProfilePage() {
             await loadAll();
             setIsEditing(false);
             setDraft(null);
+            toast.success("Company profile saved successfully");
         } catch (e) {
             console.error("Failed to save company profile", e);
             setError("Unable to save company profile. Please try again.");
+            toast.error("Failed to save company profile");
         } finally {
             setIsSaving(false);
         }

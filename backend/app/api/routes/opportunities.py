@@ -539,7 +539,16 @@ async def list_opportunity_documents(
         .order_by(desc(OpportunityDocument.created_at))
     )
     result = await db.execute(query)
-    return result.scalars().all()
+    documents = result.scalars().all()
+    
+    # Generate signed URLs for document preview
+    # Use 24-hour expiry to handle users leaving page open
+    storage = StorageService()
+    for doc in documents:
+        if doc.file_path:
+            doc.file_url = await storage.get_signed_url(doc.file_path, expiry_seconds=86400)
+    
+    return documents
 
 @router.delete("/{opp_id}/documents/{doc_id}")
 async def delete_opportunity_document(

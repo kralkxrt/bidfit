@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent } from "react";
 import axios from "axios";
 import { ChevronDown, ChevronUp, FileText, Upload, X } from "lucide-react";
+import { toast } from "react-hot-toast";
 import api from "@/lib/api";
 import type { Citation } from "@/lib/roxyApi";
 import { FileTree, type FileTreeItem, type FileTreeSection } from "./FileTree";
@@ -95,7 +96,7 @@ export function DocumentsTab({
     // Initialize documents once on mount - NO INFINITE LOOP
     useEffect(() => {
         if (hasInitializedRef.current) return;
-        
+
         const initializeDocuments = async () => {
             setIsLoading(true);
             try {
@@ -281,6 +282,7 @@ export function DocumentsTab({
                 const docsRes = await api.get(`/api/opportunities/${opportunityId}/documents`);
                 setOpportunityDocs(docsRes.data || []);
             }
+            toast.success("Documents uploaded successfully");
         } catch (error: unknown) {
             console.error("Upload failed", error);
 
@@ -297,6 +299,7 @@ export function DocumentsTab({
             }
 
             setUploadError(message);
+            toast.error("Upload failed");
         } finally {
             setUploading(false);
         }
@@ -351,7 +354,7 @@ export function DocumentsTab({
                         </div>
                         {isUploadExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>
-                    
+
                     {isUploadExpanded && (
                         <div className="px-3 pb-3 border-t border-gray-100">
                             <div className="flex items-center gap-3 mt-3">

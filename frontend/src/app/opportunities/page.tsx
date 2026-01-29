@@ -33,22 +33,7 @@ const statusBadgeStyles: Record<BidStatus, string> = {
     "NO-GO": "px-3 py-1.5 rounded-lg text-sm font-semibold bg-red-100 text-red-700",
 };
 
-function OpportunityCardSkeleton() {
-    return (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5 animate-pulse">
-            <div className="flex items-start justify-between gap-4">
-                <div className="h-5 w-48 bg-slate-200 rounded" />
-                <div className="h-6 w-16 bg-slate-200 rounded-full" />
-            </div>
-            <div className="mt-2 h-4 w-64 bg-slate-100 rounded" />
-            <div className="mt-1 h-4 w-40 bg-slate-100 rounded" />
-            <div className="mt-4 flex items-center justify-between">
-                <div className="h-4 w-44 bg-slate-100 rounded" />
-                <div className="h-4 w-24 bg-slate-100 rounded" />
-            </div>
-        </div>
-    );
-}
+import { CardSkeleton } from "@/components/ui/skeleton";
 
 export default function OpportunitiesPage() {
     const { currentOrg } = useOrgStore();
@@ -98,9 +83,11 @@ export default function OpportunitiesPage() {
         if (loading) {
             return (
                 <div className="space-y-4">
-                    <OpportunityCardSkeleton />
-                    <OpportunityCardSkeleton />
-                    <OpportunityCardSkeleton />
+                    <div className="space-y-4">
+                        <CardSkeleton />
+                        <CardSkeleton />
+                        <CardSkeleton />
+                    </div>
                 </div>
             );
         }
